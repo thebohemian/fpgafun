@@ -1,5 +1,6 @@
-`include "rxuart.v"
-`include "fo_sigma_delta_dac.v"
+`include "../common/rxuart.v"
+`include "../common/sigma_delta_dac.v"
+`include "../common/fo_sigma_delta_dac.v"
 `include "memory.v"
 `include "fifo.v"
 

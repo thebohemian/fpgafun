@@ -1,16 +1,30 @@
-`include "rxuart.v"
-`include "sid8580.v"
-`include "sigma_delta_dac.v"
+`include "../common/rxuart.v"
+`include "../common/sid/sid8580.v"
+`include "../common/fo_sigma_delta_dac.v"
 
-module sidnboard2dual(
+module sidnboard2(
 		input CLK_IN,
-		input RSTn_i,
-		input RS232_RX_i,
-		output GPIO_AUDIO_L,
-		output GPIO_AUDIO_R
-		);
-	
-	localparam DELAY_CMD = 5'h1f;
+		input UART_RX_i,
+		output GPIO_AUDIO,
+		output LED_D9,
+		output LED_D8,
+		output LED_D7,
+		output LED_D6,
+		output LED_D5,
+		output LED_D4,
+		output LED_D3,
+		output LED_D2);
+
+	localparam MAIN_CLOCK_FREQ = 12_000_000;
+	localparam UART_FREQ = 230_400;
+	localparam UART_COUNTER = MAIN_CLOCK_FREQ / UART_FREQ;
+
+	localparam DAC_CLOCK_FREQ = 48_000;
+	localparam DAC_COUNTER = MAIN_CLOCK_FREQ / DAC_CLOCK_FREQ;
+	reg [31:0] dac_counter = DAC_COUNTER - 1;
+
+	reg [7:0] resetn_counter = 2;
+	wire RSTn_i;
 
 	localparam RX_WAIT_ADDR = 0;
 	localparam RX_WAIT_DATA = 1;
@@ -30,28 +44,32 @@ module sidnboard2dual(
 	
 	wire		rx_received;
 	reg	[7:0]	rx_data;
-	reg	[1:0]	rx_state;
+	reg	[1:0]	rx_state = RX_WAIT_ADDR;
 
 	reg        sid_data_present;			// set when data for SID is available
 	reg [4:0]  sid_addr;					// addr
 	reg [7:0]  sid_data;					// data
 	reg        sid_write_en;				// set when writing to SID is possible
 
-	wire [17:0] audio_data0;				// 18bit audio data output
-	wire [17:0] audio_data1;				// 18bit audio data output
-	
-	reg	[2:0]	dac_reset_counter;
-	wire dac_reset;
+	wire [17:0] audio_dat;					// 18bit audio data output
 	
 	reg extfilter_en;
 
 	// generates a 1Mhz signal for the SID (original speed)
-	assign sid_ce_1m = sid_clk_delay > ((SID_MAIN_CLK_CYCLES/2)-1);
+	assign sid_ce_1m = sid_clk_delay == 0;
 	
-	// DAC reset is held until there is proper audio data coming out of the SID
-	// otherwise it will mess up the internal registers
-	assign dac_reset = dac_reset_counter > 0;
+	always @(posedge CLK_IN) begin
+		resetn_counter <= (resetn_counter > 0) ? resetn_counter - 1 : 0;
+	end
 	
+	assign RSTn_i = (resetn_counter == 0);
+
+	always @(posedge CLK_IN) begin
+		dac_counter <= (dac_counter > 0) ? dac_counter - 1 : DAC_COUNTER - 1;
+	end
+	
+	assign dac_ce = dac_counter == 0;
+
 	always @(posedge CLK_IN) begin
 		if (!RSTn_i) begin
 
@@ -62,7 +80,6 @@ module sidnboard2dual(
 					
 			// cause reset
 			sid_reset <= 1;
-			dac_reset_counter <= 3;
 			
 			// SID clock
 			sid_clk_delay <= SID_MAIN_CLK_CYCLES - 1;
@@ -82,10 +99,6 @@ module sidnboard2dual(
 		
 					// clears writing to SID
 					sid_write_en <= 0;
-					
-					// keeps dac reset for a few cycles
-					if (dac_reset_counter > 0)
-						dac_reset_counter <= dac_reset_counter - 1;
 				end
 			endcase
 			sid_clk_delay <= (sid_clk_delay > 0) ? sid_clk_delay - 1 : SID_MAIN_CLK_CYCLES - 1;
@@ -93,10 +106,7 @@ module sidnboard2dual(
 	end
 	
 	always @(negedge CLK_IN) begin
-		if(!RSTn_i) begin
-			rx_state <= RX_WAIT_ADDR;
-		end
-		else if (rx_received) begin
+		if (rx_received) begin
 			case (rx_state)
 				RX_WAIT_ADDR: begin
 					sid_addr <= rx_data[4:0];
@@ -113,11 +123,10 @@ module sidnboard2dual(
 		end
 	end
 	
-	rxuart rxuart(
-			.rx(RS232_RX_i),
+	rxuart #(.CLOCK_DIVIDE(UART_COUNTER/4)) rxuart(
+			.rx(UART_RX_i),
 			.rx_byte(rx_data),
 			.received(rx_received),
-			.reset(sid_reset),
 			.clk(CLK_IN)
 		);
 
@@ -125,38 +134,22 @@ module sidnboard2dual(
 			.we(sid_write_en),
 			.addr(sid_addr),
 			.data_in(sid_data),
-			.audio_data(audio_data0),
-			.ce_1m(sid_ce_1m),
-			.extfilter_en(extfilter_en),
-			.reset(sid_reset),
-			.clk(CLK_IN)
-			);
-
-	sigma_delta_dac dac0(
-			.in(audio_data0),
-			.out(GPIO_AUDIO_L),
-			.reset(dac_reset),
-			
-			.clk(CLK_IN)
-		);
-
-	sid8580 sid1(
-			.we(sid_write_en),
-			.addr(sid_addr),
-			.data_in(sid_data),
-			.audio_data(audio_data1),
+			.audio_data(audio_dat),
 			.ce_1m(sid_ce_1m),
 			.extfilter_en(extfilter_en),
 			.reset(sid_reset),
 			.clk(CLK_IN)
 		);
 
-	sigma_delta_dac dac1(
-			.in(audio_data1),
-			.out(GPIO_AUDIO_R),
-			.reset(dac_reset),
+	fo_sigma_delta_dac #(.BITS(16)) dac1 (
+			.in(audio_dat[17:2]),
+			.out(GPIO_AUDIO),
 			
-			.clk(CLK_IN)
+			.clk(dac_ce)
 		);
+
+	// LEDs show the data byte
+	//	assign { LED_D9, LED_D8, LED_D7, LED_D6, LED_D5, LED_D4, LED_D3, LED_D2 } = {0,0,0, sid_addr };
+	assign { LED_D9, LED_D8, LED_D7, LED_D6, LED_D5, LED_D4, LED_D3, LED_D2 } = sid_data;
 
 endmodule

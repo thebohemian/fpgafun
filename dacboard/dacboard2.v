@@ -1,5 +1,5 @@
-`include "rxuart.v"
-`include "sigma_delta_dac.v"
+`include "../common/rxuart.v"
+`include "../common/sigma_delta_dac.v"
 
 module dacboard(
 		input CLK_IN,

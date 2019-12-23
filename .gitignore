@@ -1,0 +1,18 @@
+*.o
+*.gtkw
+*.json
+output.txt
+*.raw
+*.pcm
+*.bin
+*.asc
+.project
+*.fst
+*.cf
+*.swp
+*.o
+
+# binaries
+uart_bits
+play_fpga
+blink_tb

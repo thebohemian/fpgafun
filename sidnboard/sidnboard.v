@@ -1,6 +1,6 @@
 `include "sidnboard_rom.v"
-`include "sid8580.v"
-`include "fo_sigma_delta_dac.v"
+`include "../common/sid/sid8580.v"
+`include "../common/fo_sigma_delta_dac.v"
 
 module sidnboard(
 		input CLK_IN,
