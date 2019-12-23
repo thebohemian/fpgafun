@@ -33,10 +33,10 @@ all: $(notdir $(CURDIR)).bin
 %.bin: %.asc
 	$(ICEPACK) $< $@
 
-%.asc: %.json
-	$(NEXTPNR) $(NEXTPNR_FLAGS) --asc $@ --pcf $(PCF) --pcf-allow-unconstrained --write $*.place.json --json $<
+%.asc: %.nljson
+	$(NEXTPNR) $(NEXTPNR_FLAGS) --asc $@ --pcf $(PCF) --pcf-allow-unconstrained --write $*.place.nljson --json $<
 
-%.json: %.v
+%.nljson: %.v
 	$(YOSYS) -f verilog -p 'synth_ice40 -top main' -b json -o $@ $<
 
 upload: $(OBJECT).bin
@@ -46,7 +46,7 @@ inspect: $(OBJECT)_tb.vcd
 	gtkwave $< $(OBJECT)_tb.gtkw
 
 clean:
-	rm -f *.bin *.txt *.blif *.rpt *.vvp *.vcd
+	rm -f *.bin *.txt *.blif *.rpt *.vvp *.vcd *.nljson *.asc
 
 .PRECIOUS: %.bin %.txt %.blif 
 .PHONY: all explain install clean inspect

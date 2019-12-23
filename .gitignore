@@ -1,6 +1,6 @@
 *.o
 *.gtkw
-*.json
+*.nljson
 output.txt
 *.raw
 *.pcm
