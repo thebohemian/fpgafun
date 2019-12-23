@@ -1,0 +1,6 @@
+set_io CLK_IN 21
+set_io GLED5 95
+set_io RLED4 96
+set_io RLED3 97
+set_io RLED2 98
+set_io RLED1 99
