@@ -7,7 +7,7 @@
  * the implementation of the detection is independant
  * of the input frequency. it is able to detect very slow
  * and very fast changes equally.
- * /
+ */
 module ext_counter (
 		output LED_D9,
 		output LED_D8,
