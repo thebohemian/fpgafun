@@ -20,7 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 //
-module rxuart(
+module rxuart
+		#(
+		// clock rate (12Mhz) / (baud rate (9600) * 4)
+		parameter CLOCK_DIVIDE = 312)
+		
+		(
 		input clk, // The master clock for this module
 		input rx, // Incoming serial line
 		output received, // Indicated that a byte has been received.
@@ -29,19 +34,19 @@ module rxuart(
 		output recv_error // Indicates error in receiving packet.
 		);
 
-	parameter CLOCK_DIVIDE = 312; // clock rate (12Mhz) / (baud rate (9600) * 4)
-
 	// States for the receiving state machine.
 	// These are just constants, not parameters to override.
-	parameter RX_IDLE = 0;
-	parameter RX_CHECK_START = 1;
-	parameter RX_READ_BITS = 2;
-	parameter RX_CHECK_STOP = 3;
-	parameter RX_DELAY_RESTART = 4;
-	parameter RX_ERROR = 5;
-	parameter RX_RECEIVED = 6;
+	localparam RX_IDLE = 0;
+	localparam RX_CHECK_START = 1;
+	localparam RX_READ_BITS = 2;
+	localparam RX_CHECK_STOP = 3;
+	localparam RX_DELAY_RESTART = 4;
+	localparam RX_ERROR = 5;
+	localparam RX_RECEIVED = 6;
+	
+	localparam CLOCK_DIVIDE_BITS = $clog2(CLOCK_DIVIDE);
 
-	reg [10:0] rx_clk_divider = CLOCK_DIVIDE;
+	reg [CLOCK_DIVIDE_BITS-1:0] rx_clk_divider = CLOCK_DIVIDE;
 
 	reg [2:0] recv_state = RX_IDLE;
 	reg [5:0] rx_countdown = 0;

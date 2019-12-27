@@ -36,8 +36,10 @@ module dacboard3(
 	// UART frequency/speed
 	//localparam UART_FREQ = 115_200;
 	localparam UART_FREQ = 230_400;
+//	localparam UART_FREQ = 460_800;
 	//localparam UART_FREQ = 150;
 	localparam UART_COUNTER = MAIN_CLOCK_FREQ / UART_FREQ;
+	localparam UART_CLOCK_DIVIDE = UART_COUNTER / 4;
 
 	//localparam DAC_CLOCK_FREQ = 1;
 	//localparam DAC_CLOCK_FREQ = 35;
@@ -117,7 +119,7 @@ module dacboard3(
 		end
 	end
 	
-	rxuart #(.CLOCK_DIVIDE(UART_COUNTER/4))
+	rxuart #(.CLOCK_DIVIDE(UART_CLOCK_DIVIDE))
 		rxuart(
 			.rx(UART_RX_i),
 			.rx_byte(rx_data),

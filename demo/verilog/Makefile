@@ -19,7 +19,9 @@ NEXTPNR_FLAGS=--hx8k --package ct256
 
 ARACHNE_FLAGS="-d 8k -P ct256"
 
-OBJECT = blink2
+SIM_OBJECT = ext_counter
+FPGA_OBJECT = $(SIM_OBJECT)
+TOP_OBJECT = $(SIM_OBJECT)
 
 all: $(notdir $(CURDIR)).bin
 
@@ -37,13 +39,15 @@ all: $(notdir $(CURDIR)).bin
 	$(NEXTPNR) $(NEXTPNR_FLAGS) --asc $@ --pcf $(PCF) --pcf-allow-unconstrained --write $*.place.nljson --json $<
 
 %.nljson: %.v
-	$(YOSYS) -f verilog -p 'synth_ice40 -top main' -b json -o $@ $<
+	$(YOSYS) -f verilog -p 'synth_ice40 -top $(TOP_OBJECT)' -b json -o $@ $<
 
-upload: $(OBJECT).bin
+upload: $(FPGA_OBJECT).bin
 	$(ICEPROG) -S $<
 
-inspect: $(OBJECT)_tb.vcd
-	gtkwave $< $(OBJECT)_tb.gtkw
+sim: $(SIM_OBJECT)_tb.vcd
+	gtkwave $< $(SIM_OBJECT)_tb.gtkw
+
+tsim: $(SIM_OBJECT)_tb.vcd
 
 clean:
 	rm -f *.bin *.txt *.blif *.rpt *.vvp *.vcd *.nljson *.asc

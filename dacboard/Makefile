@@ -21,6 +21,7 @@ TOP_OBJECT = $(SIM_OBJECT)
 #BAUDRATE = 150
 #BAUDRATE = 115200
 BAUDRATE = 230400
+#BAUDRATE = 460800
 
 # Tool Examples:
 # transforms source into PCM stream of:

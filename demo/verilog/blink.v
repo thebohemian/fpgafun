@@ -1,16 +1,15 @@
-module main(
-		input CLK_IN,
-		output GLED5,
-		output RLED1,
-		output RLED2,
-		output RLED3,
-		output RLED4);
-
-	/*
-	typedef enum logic [2:0] {
-		RED, GREEN, MAGENTA
-	} color_t;
-	*/
+module blink(
+		output LED_D9,
+		output LED_D8,
+		output LED_D7,
+		output LED_D6,
+		output LED_D5,
+		output LED_D4,
+		output LED_D3,
+		output LED_D2,
+		
+		input CLK_IN
+		);
 
 	localparam COUNTER_WIDTH = 24;
 
@@ -20,10 +19,13 @@ module main(
 	always @(posedge CLK_IN)
 		counter <= counter + 1;
 
-	assign GLED5 = counter[COUNTER_WIDTH - 1]; // MSB
-	assign RLED1 = counter[COUNTER_WIDTH - 2];
-	assign RLED2 = counter[COUNTER_WIDTH - 3];
-	assign RLED3 = counter[COUNTER_WIDTH - 4];
-	assign RLED4 = counter[COUNTER_WIDTH - 5];
+		assign LED_D9 = counter[COUNTER_WIDTH - 1];
+		assign LED_D8 = counter[COUNTER_WIDTH - 2];
+		assign LED_D7 = counter[COUNTER_WIDTH - 3];
+		assign LED_D6 = counter[COUNTER_WIDTH - 4];
+		assign LED_D5 = counter[COUNTER_WIDTH - 5];
+		assign LED_D4 = counter[COUNTER_WIDTH - 6];
+		assign LED_D3 = counter[COUNTER_WIDTH - 7];
+		assign LED_D2 = counter[COUNTER_WIDTH - 8];
 
 endmodule
