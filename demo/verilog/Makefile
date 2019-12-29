@@ -19,9 +19,17 @@ NEXTPNR_FLAGS=--hx8k --package ct256
 
 ARACHNE_FLAGS="-d 8k -P ct256"
 
-SIM_OBJECT = ext_counter
+SIM_OBJECT = blink_74hc595
+#SIM_OBJECT = rxuart2
+#SIM_OBJECT = uart_test
 FPGA_OBJECT = $(SIM_OBJECT)
 TOP_OBJECT = $(SIM_OBJECT)
+
+#BAUDRATE = 150
+#BAUDRATE = 115200
+#BAUDRATE = 230400
+#BAUDRATE = 460800
+BAUDRATE = 921600
 
 all: $(notdir $(CURDIR)).bin
 
@@ -49,8 +57,12 @@ sim: $(SIM_OBJECT)_tb.vcd
 
 tsim: $(SIM_OBJECT)_tb.vcd
 
+# sets up tty
+tty:
+	stty -F /dev/ttyUSB1 cs8 -hup -parenb -cstopb -clocal -echo raw speed $(BAUDRATE)
+
 clean:
 	rm -f *.bin *.txt *.blif *.rpt *.vvp *.vcd *.nljson *.asc
 
-.PRECIOUS: %.bin %.txt %.blif 
-.PHONY: all explain install clean inspect
+.PRECIOUS: %.bin %.asc %.nljson 
+.PHONY: all explain install clean simclean sim tty

@@ -5,6 +5,8 @@
 `include "clock60mhz.v"
 `include "clock96mhz.v"
 `include "clock120mhz.v"
+`include "clock124.5mhz.v"
+`include "clock127.5mhz.v"
 `include "clock150mhz.v"
 `include "clock180mhz.v"
 `include "clock204mhz.v"
@@ -47,6 +49,8 @@ module iceclock
 			60: `instantiate(60)
 			96: `instantiate(96)
 			120: `instantiate(120)
+			125: `instantiate(1245)	// actually 124.5
+			128: `instantiate(1275)	// actually 127.5
 			150: `instantiate(150)
 			180: `instantiate(180)
 			204: `instantiate(204)
