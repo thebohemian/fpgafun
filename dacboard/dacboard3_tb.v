@@ -18,7 +18,7 @@ module dacboard3_tb();
 
 	always #41.5 tb_clk = !tb_clk;
 	
-	dacboard3 dut(
+	top dut(
 			.CLK_IN(tb_clk),
 			.UART_RX_i(tb_rx)
 		);

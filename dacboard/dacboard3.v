@@ -4,7 +4,7 @@
 `include "memory.v"
 `include "fifo.v"
 
-module dacboard3(
+module top(
 		input CLK_IN,
 		
 		input UART_RX_i,

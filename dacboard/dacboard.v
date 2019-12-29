@@ -2,7 +2,7 @@
 `include "../common/sigma_delta_dac.v"
 `include "../common/fo_sigma_delta_dac.v"
 
-module dacboard(
+module top(
 		input CLK_IN,
 		input RS232_RX_i,
 		output GPIO_AUDIO_L,
