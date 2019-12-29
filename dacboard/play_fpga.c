@@ -11,7 +11,7 @@
 
 const char *TTY_PATH = "/dev/ttyUSB1";
 
-#define BUFFER_SIZE 512
+#define BUFFER_SIZE 128
 
 typedef enum {
 	FILLING,

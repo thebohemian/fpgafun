@@ -1,6 +1,6 @@
 /** 
  */
-`include "../../common/rxuart2.v"
+`include "../../common/uart_rx.v"
 
 module uart_test (
 		output LED_D9,
@@ -34,7 +34,7 @@ module uart_test (
 		end
 	end
 	
-	rxuart #(
+	uart_rx #(
 			.CLK_FREQ(MAIN_CLOCK_FREQ),
 			.BAUDRATE(UART_FREQ)
 		)

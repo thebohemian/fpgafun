@@ -1,6 +1,6 @@
 `timescale 1ns/100ps
 
-`include "../../common/rxuart2.v"
+`include "../../common/uart_rx.v"
 
 module rxuart2_tb();
 	/*
@@ -19,7 +19,7 @@ module rxuart2_tb();
 
 	always #41.5 tb_clk = !tb_clk;
 	
-	rxuart #(
+	uart_rx #(
 			.CLK_FREQ(MAIN_CLOCK_FREQ),
 			.BAUDRATE(UART_FREQ)
 		)
@@ -53,8 +53,8 @@ module rxuart2_tb();
 	endtask
 	
 	initial begin
-		$dumpfile("rxuart2_tb.vcd");
-		$dumpvars(0, rxuart2_tb);
+		$dumpfile("uart_rx_tb.vcd");
+		$dumpvars(0, uart_rx_tb);
 
 		tb_clk <= 1'b0;
 		tb_rx <= 1;

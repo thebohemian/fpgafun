@@ -22,6 +22,7 @@ TOP_OBJECT = $(SIM_OBJECT)
 #BAUDRATE = 115200
 BAUDRATE = 230400
 #BAUDRATE = 460800
+#BAUDRATE = 921600
 
 # Tool Examples:
 # transforms source into PCM stream of:
@@ -77,4 +78,4 @@ tty:
 	stty -F /dev/ttyUSB1 cs8 -hup -parenb -cstopb -clocal -echo raw speed $(BAUDRATE)
 
 .PRECIOUS: %.bin %.asc %.nljson 
-.PHONY: all explain install clean simclean sim
+.PHONY: all explain install clean simclean sim tty

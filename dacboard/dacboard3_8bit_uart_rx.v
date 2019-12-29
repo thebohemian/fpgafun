@@ -1,10 +1,10 @@
-`include "../common/rxuart.v"
+`include "../common/uart_rx.v"
 `include "../common/sigma_delta_dac.v"
 `include "../common/fo_sigma_delta_dac.v"
 `include "memory.v"
 `include "fifo.v"
 
-module dacboard3(
+module dacboard3_8bit_rxuart2(
 		input CLK_IN,
 		
 		input UART_RX_i,
@@ -39,33 +39,26 @@ module dacboard3(
 	localparam MAIN_CLOCK_FREQ = 12_000_000;
 	
 	// UART frequency/speed
-	//localparam UART_FREQ = 115_200;
-	localparam UART_FREQ = 230_400;
+	localparam UART_FREQ = 115_200;
+//	localparam UART_FREQ = 230_400;
 //	localparam UART_FREQ = 460_800;
+	//localparam UART_FREQ = 921_600;
 	//localparam UART_FREQ = 150;
-	localparam UART_COUNTER = MAIN_CLOCK_FREQ / UART_FREQ;
-	localparam UART_CLOCK_DIVIDE = UART_COUNTER / 4;
 
-	//localparam DAC_CLOCK_FREQ = 8_000;
+	//localparam DAC_CLOCK_FREQ = 1;
+	//localparam DAC_CLOCK_FREQ = 35;
 	localparam DAC_CLOCK_FREQ = 11_025;
 	//	localparam DAC_CLOCK_FREQ = 22_050;
 	//	localparam DAC_CLOCK_FREQ = 44_100;
 	//localparam DAC_CLOCK_FREQ = 48_000;
+	
 	localparam DAC_COUNTER = (MAIN_CLOCK_FREQ / DAC_CLOCK_FREQ);
 	localparam DAC_BITS = $clog2(DAC_COUNTER);
 	reg [(DAC_BITS-1):0] dac_counter = DAC_COUNTER - 1;
-	
-	localparam OS_DAC_CLOCK_FREQ = DAC_CLOCK_FREQ * 8;
-	localparam OS_DAC_COUNTER = (MAIN_CLOCK_FREQ / OS_DAC_CLOCK_FREQ);
-	localparam OS_DAC_BITS = $clog2(OS_DAC_COUNTER);
-	reg [(OS_DAC_BITS-1):0] os_dac_counter = OS_DAC_COUNTER - 1;
-	
-	// byte transfer states
-	localparam BITS = 16;
 
-	localparam RX_WAIT_DATA_0 = 0;
-	localparam RX_WAIT_DATA_1 = 1;
-	
+	// byte transfer states
+	localparam BITS = 8;
+
 	wire		rx_received;
 	reg	[7:0]	rx_data;
 	reg [7:0]	rx_audio_buf = 0;
@@ -73,7 +66,7 @@ module dacboard3(
 	reg			fifo_wr_en = 0;
 
 	// data to write to fifo
-	localparam FIFO_SIZE = 8192;
+	localparam FIFO_SIZE = 16384;
 	localparam FIFO_MAX_BITS = $clog2(FIFO_SIZE);
 	wire fifo_empty;
 	wire fifo_full;
@@ -84,19 +77,18 @@ module dacboard3(
 	wire fifo_almost_full;
 	
 	assign fifo_almost_empty = (fifo_fill <= FIFO_SIZE / 10);
-	assign fifo_almost_full = (fifo_fill >= FIFO_SIZE - (FIFO_SIZE / 10));
+	assign fifo_almost_full = (fifo_fill >= FIFO_SIZE - (2*(FIFO_SIZE / 10)));
 	
 	// data from fifo going to dac
 	wire [(BITS-1):0] fifo_out;
 	
 	wire dac_ce;
-	wire [(BITS-1):0] dac_in;
+	reg [(BITS-1):0] dac_in;
 	wire dac_reset;
 
 	assign fifo_rd_en = dac_ce;
 	
 	// play output
-//	assign dac_in = ((dac_counter>>3) > 0) ? 16'h0000 : fifo_out;
 	assign dac_in = fifo_out;
 	
 	// reset dac when fifo invalid
@@ -106,47 +98,25 @@ module dacboard3(
 	always @(posedge CLK_IN) begin
 		dac_counter <= (dac_counter > 0) ? dac_counter - 1 : DAC_COUNTER - 1;
 	end
+	
 	assign dac_ce = dac_counter == 0;
-
-	// updating oversampled dac cycle
-	always @(posedge CLK_IN) begin
-		os_dac_counter <= (os_dac_counter > 0) ? os_dac_counter - 1 : OS_DAC_COUNTER - 1;
-	end
-	assign os_dac_ce = os_dac_counter == 0;
 		
 	always @(posedge CLK_IN) begin
 		fifo_wr_en <= 0;
 		
 		if (rx_received) begin
-			case (rx_state)
-				RX_WAIT_DATA_0: begin
-					rx_audio_buf <= rx_data;
-					
-					rx_state <= RX_WAIT_DATA_1;
-				end
-				RX_WAIT_DATA_1: begin
-					fifo_wr_data <= { rx_data, rx_audio_buf };
-					fifo_wr_en <= 1;
-					
-					rx_state <= RX_WAIT_DATA_0;
-				end
-			endcase
+			fifo_wr_data <= rx_data;
+			fifo_wr_en <= 1;
 		end
 	end
-/*	
-	always @(posedge CLK_IN) begin
-		case ({fifo_rd_en, os_dac_ce })
-			2'b10, 2'b11:
-				dac_in <= fifo_out;
-			2'b01:
-				dac_in <= 0;
-		endcase
-	end
-*/
-	rxuart #(.CLOCK_DIVIDE(UART_CLOCK_DIVIDE))
+	
+	rxuart #(
+			.CLK_FREQ(MAIN_CLOCK_FREQ),
+			.BAUDRATE(UART_FREQ)
+			)
 		rxuart(
 			.rx(UART_RX_i),
-			.rx_byte(rx_data),
+			.rx_data(rx_data),
 			.received(rx_received),
 			.clk(CLK_IN)
 		);
@@ -167,8 +137,8 @@ module dacboard3(
 			.clk(CLK_IN)
 		);
 
-	fo_sigma_delta_dac #(.BITS(BITS), .INV(0))
-		fo_dac1 (
+	fo_sigma_delta_dac #(.BITS(BITS), .INV(1))
+		dac0 (
 			.reset(dac_reset),
 			.in(dac_in),
 			.out(GPIO_AUDIO_L),
@@ -176,8 +146,18 @@ module dacboard3(
 			.clk(dac_ce)
 		);
 	
+	/*
+	sigma_delta_dac #(.MSBI(7), .INV(1))
+		dac1 (
+			.reset(dac_reset),
+			.in(dac_in),
+			.out(GPIO_AUDIO_R),
+			
+			.clk(dac_ce)
+		);
+	*/
+	
 	assign leds = fifo_fill[(FIFO_MAX_BITS-1):(FIFO_MAX_BITS-9)];
-	//assign leds = dac_in[15:8];
 	
 	assign P16_o = fifo_empty;
 	assign P15_o = fifo_full;
