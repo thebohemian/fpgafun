@@ -1,23 +1,26 @@
-module shift_74hc595(
+/**
+ * A module that allows bytewise outgoing SPI transfers.
+ *
+ * The module accepts the byte to send out when rd_en is HIGH.
+ * It then starts the transfer when wr_en is HIGH next.
+ * The bits are sent MSB first on each wr_en HIGH.
+ *
+ * During the transfer the latch line is taken LOW.
+ * When the transfer ends the latch line is taken HIGH again.
+ *
+ * The rd_en and wr_en are controlled from the outside.
+ */
+module spi_tx(
 		input rd_en,
 		input [7:0] data_in,
 		
+		input wr_en,
 		output data_out,
+		
 		output latch,
-		output register_clock,
 		
 		input clk
 		);
-	
-	localparam CLK_FREQ = 12_000_000;
-	localparam SHIFT_REG_FREQ = 1_000_000;
-	localparam SHIFT_REG_TICKS = CLK_FREQ / SHIFT_REG_FREQ;
-	localparam SHIFT_REG_BITS = $clog2(SHIFT_REG_TICKS);
-	
-	reg [(SHIFT_REG_BITS-1):0] shift_reg_counter = 0;
-	always @ (posedge clk)
-		shift_reg_counter <= shift_reg_counter == 0 ? SHIFT_REG_TICKS - 1 : shift_reg_counter - 1;
-	assign register_clock = shift_reg_counter == 0;
 		
 	reg [2:0] counter = 0;
 	reg [7:0] shift_reg;
@@ -38,13 +41,13 @@ module shift_74hc595(
 				end
 			end
 			STATE_START: begin
-				if (register_clock) begin
+				if (wr_en) begin
 					state <= STATE_SHIFTING;
 					latch <= 0;
 				end
 			end
 			STATE_SHIFTING: begin
-				if (register_clock) begin
+				if (wr_en) begin
 					data_out <= shift_reg[counter];
 					
 					if (counter > 0) begin
@@ -55,7 +58,7 @@ module shift_74hc595(
 				end
 			end
 			STATE_END: begin
-				if (register_clock) begin
+				if (wr_en) begin
 					state <= STATE_IDLE;
 					latch <= 1;
 				end

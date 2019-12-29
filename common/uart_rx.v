@@ -1,4 +1,4 @@
-module rxuart
+module uart_rx
 		#(
 		parameter CLK_FREQ=12_000_000,
 		parameter BAUDRATE=9600
