@@ -1,4 +1,4 @@
-module blink2(
+module top(
 		input CLK_IN,
 		input PIN_C16_i,
 		input PIN_D16_i,

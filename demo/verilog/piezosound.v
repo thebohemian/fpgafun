@@ -1,4 +1,4 @@
-module main (
+module top (
     input CLK_IN,
     output PIN_C16_o,
     output PIN_D16_o,

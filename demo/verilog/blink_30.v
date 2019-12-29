@@ -1,6 +1,6 @@
 `include "../../common/iceclock/iceclock.v"
 
-module blink_30(
+module top(
 		output LED_D9,
 		output LED_D8,
 		output LED_D7,

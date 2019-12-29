@@ -4,7 +4,7 @@
 `include "../../common/shift_74hc595.v"
 `include "../../common/uart_rx.v"
 
-module blink_74hc595(
+module top(
 		input CLK_IN,
 		
 		output LED_D9,

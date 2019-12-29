@@ -12,7 +12,7 @@
  *
  * This design allows to be run at 209 MHz.
  */
-module ext_counter_reg (
+module top (
 		output LED_D9,
 		output LED_D8,
 		output LED_D7,

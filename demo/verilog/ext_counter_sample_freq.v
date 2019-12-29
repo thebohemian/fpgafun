@@ -19,7 +19,7 @@
  * 7274240ns - 100nF
  *
  */
-module ext_counter_sample_freq(
+module top(
 		output LED_D9,
 		output LED_D8,
 		output LED_D7,
