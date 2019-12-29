@@ -19,10 +19,10 @@ NEXTPNR_FLAGS=--hx8k --package ct256
 
 ARACHNE_FLAGS="-d 8k -P ct256"
 
-SIM_OBJECT = 8leds_74hc595
 #SIM_OBJECT = rxuart2
 #SIM_OBJECT = uart_test
-FPGA_OBJECT = $(SIM_OBJECT)
+#SIM_OBJECT = i2c_tx
+FPGA_OBJECT = 16leds_mcp23017
 
 TOP_OBJECT = top
 
@@ -37,7 +37,7 @@ BAUDRATE = 115200
 all: $(notdir $(CURDIR)).bin
 
 %.vvp: %.v
-	$(IVERILOG) -o $@ $<
+	$(IVERILOG) -g2005-sv -o $@ $<
 
 %.vcd: %.vvp
 	$(VVP) $<
