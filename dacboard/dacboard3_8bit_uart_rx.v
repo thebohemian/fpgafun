@@ -4,7 +4,7 @@
 `include "memory.v"
 `include "fifo.v"
 
-module dacboard3_8bit_rxuart2(
+module dacboard3_8bit_uart_rx(
 		input CLK_IN,
 		
 		input UART_RX_i,
@@ -110,7 +110,7 @@ module dacboard3_8bit_rxuart2(
 		end
 	end
 	
-	rxuart #(
+	uart_rx #(
 			.CLK_FREQ(MAIN_CLOCK_FREQ),
 			.BAUDRATE(UART_FREQ)
 			)
