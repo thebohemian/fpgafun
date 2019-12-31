@@ -15,12 +15,14 @@ module spi_tx(
 		input [7:0] data_in,
 		
 		input wr_en,
-		output data_out,
+		output reg data_out,
 		
-		output latch,
+		output reg latch,
 		
 		input clk
 		);
+	
+	initial latch <= 1;
 		
 	reg [2:0] counter = 0;
 	reg [7:0] shift_reg;

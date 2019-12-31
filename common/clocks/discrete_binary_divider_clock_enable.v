@@ -27,5 +27,5 @@ module discrete_binary_divider_clock_enable
 	always @ (posedge clk)
 		counter <= counter + 1;
 		
-	assign en = counter[N] & !counter[0];
+	assign en = &counter[N];
 endmodule

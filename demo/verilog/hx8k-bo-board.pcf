@@ -33,15 +33,41 @@ set_io UART_DSR_o B14
 set_io UART_DCD_o B15
 
 ### Pins
+# 1st Bar - 1st Line
 set_io PIN_C16_o C16
-set_io PIN_B16_o B16
-
 set_io PIN_D16_o D16
-set_io PIN_D14_o D14
-
 set_io PIN_E16_o E16
+
+set_io PIN_F16_o F16
+set_io PIN_G16_o G16
+set_io PIN_H16_o H16
+set_io PIN_J15_o J15
+
+set_io PIN_G14_o G14
+set_io PIN_K14_o K14
+set_io PIN_K15_o K15
+set_io PIN_M16_o M16
+
+set_io PIN_N16_o N16
+set_io PIN_P16_o P16
+
+# 1st Bar - 2nd Line
+set_io PIN_B16_o B16
+set_io PIN_D14_o D14
 set_io PIN_D15_o D15
+
 
 set_io -pullup yes D16_i D16
 set_io -pullup yes C16_i C16
 
+### 2nd Bar - 1st Line
+set_io PIN_A2_o A2
+set_io PIN_B4_o B4
+set_io PIN_B5_o B5
+
+set_io PIN_A5_o A5
+set_io PIN_B6_o B6
+set_io PIN_A6_o A6
+
+set_io PIN_B7_o B7
+set_io PIN_B8_o B8

@@ -6,7 +6,7 @@ module discrete_binary_divider_clock
 		)
 		
 		(
-		output div_clk,
+		output clk_out,
 		
 		input clk
 		);
@@ -16,5 +16,5 @@ module discrete_binary_divider_clock
 	always @ (posedge clk)
 		counter <= counter + 1;
 		
-	assign div_clk = counter[N];
+	assign clk_out = counter[N];
 endmodule
