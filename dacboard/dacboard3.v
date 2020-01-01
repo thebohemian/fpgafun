@@ -55,7 +55,7 @@ module top(
 	localparam DAC_BITS = $clog2(DAC_COUNTER);
 	reg [(DAC_BITS-1):0] dac_counter = DAC_COUNTER - 1;
 	
-	localparam OS_DAC_CLOCK_FREQ = DAC_CLOCK_FREQ * 8;
+	localparam OS_DAC_CLOCK_FREQ = DAC_CLOCK_FREQ * 4;
 	localparam OS_DAC_COUNTER = (MAIN_CLOCK_FREQ / OS_DAC_CLOCK_FREQ);
 	localparam OS_DAC_BITS = $clog2(OS_DAC_COUNTER);
 	reg [(OS_DAC_BITS-1):0] os_dac_counter = OS_DAC_COUNTER - 1;
@@ -133,16 +133,7 @@ module top(
 			endcase
 		end
 	end
-/*	
-	always @(posedge CLK_IN) begin
-		case ({fifo_rd_en, os_dac_ce })
-			2'b10, 2'b11:
-				dac_in <= fifo_out;
-			2'b01:
-				dac_in <= 0;
-		endcase
-	end
-*/
+
 	rxuart #(.CLOCK_DIVIDE(UART_CLOCK_DIVIDE))
 		rxuart(
 			.rx(UART_RX_i),
@@ -167,7 +158,7 @@ module top(
 			.clk(CLK_IN)
 		);
 
-	fo_sigma_delta_dac #(.BITS(BITS), .INV(0))
+	fo_sigma_delta_dac #(.BITS(BITS), .INV(1))
 		fo_dac1 (
 			.reset(dac_reset),
 			.in(dac_in),

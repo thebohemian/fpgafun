@@ -34,8 +34,8 @@ module top(
 	localparam MAIN_CLOCK_FREQ = 12_000_000;
 	
 	// UART frequency/speed
-	localparam UART_FREQ = 115_200;
-	//	localparam UART_FREQ = 230_400;
+//	localparam UART_FREQ = 115_200;
+	localparam UART_FREQ = 230_400;
 //	localparam UART_FREQ = 460_800;
 	//localparam UART_FREQ = 921_600;
 	//localparam UART_FREQ = 150;
@@ -73,7 +73,7 @@ module top(
 	wire fifo_almost_full;
 	
 	assign fifo_almost_empty = (fifo_fill <= FIFO_SIZE / 10);
-	assign fifo_almost_full = (fifo_fill >= FIFO_SIZE - (FIFO_SIZE / 10));
+	assign fifo_almost_full = (fifo_fill >= FIFO_SIZE - 3*(FIFO_SIZE / 10));
 	
 	// data from fifo going to dac
 	wire [(BITS-1):0] fifo_out;
@@ -131,10 +131,19 @@ module top(
 		);
 
 	fo_sigma_delta_dac #(.BITS(BITS), .INV(1))
-		fo_dac1 (
+		dac0 (
 			.reset(dac_reset),
 			.in(dac_in),
 			.out(GPIO_AUDIO_L),
+			
+			.clk(dac_ce)
+		);
+	
+	sigma_delta_dac #(.MSBI(BITS-1), .INV(1))
+		dac1 (
+			.reset(dac_reset),
+			.in(dac_in),
+			.out(GPIO_AUDIO_R),
 			
 			.clk(dac_ce)
 		);

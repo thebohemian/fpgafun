@@ -18,7 +18,7 @@ reg [MSBI+2:0] SigmaLatch; //Latches output of Sigma Adder
 reg [MSBI+2:0] DeltaB;     //B input of Delta Adder
 
 always @(*) DeltaB = {SigmaLatch[MSBI+2], SigmaLatch[MSBI+2]} << (MSBI+1);
-always @(*) DeltaAdder = in + DeltaB;
+always @(*) DeltaAdder = { ~in[MSBI], in[(MSBI-1):0] } + DeltaB;
 always @(*) SigmaAdder = DeltaAdder + SigmaLatch;
 
 always @(posedge clk or posedge reset) begin

@@ -10,17 +10,14 @@ module fo_sigma_delta_dac
 		
 		input clk
 		);
+		
+	reg [BITS:0] accumulator = 0;
 	
 	localparam MSB = BITS - 1;
-	
-	reg [BITS:0] accumulator = 32768;
 
 	always @(posedge clk)
-		if (in[MSB])
-			accumulator <= accumulator[MSB:0] - (-in);
-		else
-			accumulator <= accumulator[MSB:0] + in;
+			accumulator <= accumulator[MSB:0] + {~in[MSB], in[MSB-1:0]};
 
-	assign out = (!reset ? accumulator[BITS] : 32768) ^ INV;
+	assign out = (!reset ? accumulator[BITS] : 0) ^ INV;
 
 endmodule
