@@ -14,7 +14,7 @@ NEXTPNR_FLAGS=--hx8k --package ct256 --force
 ARACHNE_FLAGS="-d 8k -P ct256"
 PCF=hx8k-ct256.pcf
 
-SIM_OBJECT = dacboard4
+SIM_OBJECT = dacboard4_16bit
 FPGA_OBJECT = $(SIM_OBJECT)
 TOP_OBJECT = top
 
