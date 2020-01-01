@@ -1,4 +1,5 @@
 `include "sidnboard_rom.v"
+`include "../common/clocks/counter_clock_enable.v"
 `include "../common/sid/sid8580.v"
 `include "../common/fo_sigma_delta_dac.v"
 
@@ -10,8 +11,6 @@ module sidnboard(
 	localparam MAIN_CLOCK_FREQ = 12_000_000;
 	//localparam DAC_CLOCK_FREQ = 44_100;
 	localparam DAC_CLOCK_FREQ = 48_000;
-	localparam DAC_COUNTER = MAIN_CLOCK_FREQ / DAC_CLOCK_FREQ;
-	reg [31:0] dac_counter = DAC_COUNTER - 1;
 	
 	localparam DELAY_CMD = 5'h1f;
 	
@@ -39,8 +38,7 @@ module sidnboard(
 
 	wire [17:0] audio_dat;					// 18bit audio data output
 	
-	reg	[2:0]	dac_reset_counter;
-	wire dac_reset;
+	wire dac_ce;
 	
 	reg extfilter_en;
 
@@ -50,10 +48,6 @@ module sidnboard(
 
 	// generates a 1Mhz signal for the SID (original speed)
 	assign sid_ce_1m = sid_clk_delay == 0;
-	
-	// DAC reset is held until there is proper audio data coming out of the SID
-	// otherwise it will mess up the internal registers
-	assign dac_reset = dac_reset_counter > 0;
 	
 	function [COUNTER_WIDTH-1:0] decrease_wait_cycles;
 		input [COUNTER_WIDTH-1:0] cycles;
@@ -72,12 +66,6 @@ module sidnboard(
 	assign RSTn_i = (resetn_counter == 0);
 
 	always @(posedge CLK_IN) begin
-		dac_counter <= (dac_counter > 0) ? dac_counter - 1 : DAC_COUNTER - 1;
-	end
-	
-	assign dac_ce = dac_counter == 0;
-	
-	always @(posedge CLK_IN) begin
 		if (!RSTn_i) begin
 
 			// ROM
@@ -91,7 +79,6 @@ module sidnboard(
 					
 			// cause reset
 			sid_reset <= 1;
-			dac_reset_counter <= 3;
 		end
 		else begin
 			case (sid_clk_delay)
@@ -121,9 +108,6 @@ module sidnboard(
 					
 					sid_wait_cycles <= decrease_wait_cycles(sid_wait_cycles);
 					
-					// keeps dac reset for a few cycles
-					if (dac_reset_counter > 0)
-						dac_reset_counter <= dac_reset_counter - 1;
 				end
 			endcase
 		end
@@ -138,6 +122,18 @@ module sidnboard(
 			sid_clk_delay <= (sid_clk_delay > 0) ? sid_clk_delay - 1 : SID_MAIN_CLK_CYCLES - 1;
 		end
 	end
+	
+	counter_clock_enable
+		#(
+			.CLK_FREQ(MAIN_CLOCK_FREQ),
+			.COUNTER_FREQ(DAC_CLOCK_FREQ),
+		)
+		clock_enable
+		(
+			.en(dac_ce),
+			
+			.clk(CLK_IN)
+		);
 
 	sidnboard_rom rom(
 			.addr(rom_index),

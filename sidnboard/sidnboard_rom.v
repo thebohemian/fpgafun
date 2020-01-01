@@ -33,27 +33,8 @@ module sidnboard_rom(
 				end
 				8'h05: begin
 					addr_out <= 5'h04;
-					cmd_out <= 8'h21;
-				end
-/*				
-				8'h06: begin
-					addr_out <= 5'h1f;
-					cmd_out <= 8'h0a;
-				end
-				8'h07: begin
-					addr_out <= 5'h04;
 					cmd_out <= 8'h11;
 				end
-				8'h08: begin
-					addr_out <= 5'h1f;
-					cmd_out <= 8'h0a;
-				end
-				8'h09: begin
-					addr_out <= 5'h04;
-					cmd_out <= 8'h81;
-//					cmd_out <= 8'h11;
-				end
-				*/
 				default: begin
 					addr_out <= 5'h1f;
 					cmd_out <= 8'hff;
