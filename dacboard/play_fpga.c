@@ -47,7 +47,7 @@ off_t getFileSize(int fd) {
 void delay() {
    struct timespec spec = {
        .tv_sec = 0L,
-	   .tv_nsec = 50000000L /* 50 ms */
+	   .tv_nsec = 10000000L /* 10 ms */
    };
    nanosleep(&spec, NULL);
 }

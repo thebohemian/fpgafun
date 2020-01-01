@@ -25,9 +25,14 @@ module uart_rx
 	reg [8:0] bits;
 	
 	/* handles metastability */
+	/*
 	reg rx_metastable = 0;
-	always @ (posedge clk) rx_metastable <= rx;
-	wire rx_stable = rx_metastable;
+	reg rx_stable = 0;
+	always @ (posedge clk) begin
+		rx_metastable <= rx;
+		rx_stable <= rx_metastable;
+	end*/
+	wire rx_stable = rx;
 	
 	always @ (posedge clk) begin
 		// clears received flag
@@ -41,7 +46,6 @@ module uart_rx
 					if (!rx_stable) begin
 						counter <= HALF_BIT_SAMPLE_COUNTER - 1;
 						state <= STATE_CHECK_START;
-						
 					end
 					else begin
 						counter <= 0;
@@ -72,8 +76,7 @@ module uart_rx
 				end
 				STATE_CHECK_STOP: begin
 					if (rx_stable) begin
-						// stop bits is low, as expected, place read data on output
-						counter <= HALF_BIT_SAMPLE_COUNTER;
+						// stop bit is high, as expected, place read data on output
 						state <= STATE_IDLE;
 						
 						received <= 1;
