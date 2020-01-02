@@ -36,7 +36,7 @@ BAUDRATE = 3000000
 # aplay -f s16le -c 1 -t raw -r 11025 song.raw
 #
 # send raw bytes (in hex) through UART:
-# printf '\x18\x01\x00\x00\x01\x20\x05\x80\x06\xf5\x04\x21' > /dev/ttyUSB1 
+# printf '\x18\x0f\x00\x00\x01\x20\x05\x80\x06\xf5\x04\x21' > /dev/ttyUSB1 
 
 all: $(notdir $(CURDIR)).bin
 
