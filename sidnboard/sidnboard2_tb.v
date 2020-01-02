@@ -18,7 +18,7 @@ module sidnboard2_tb();
 
 	always #41.5 tb_clk = !tb_clk;
 	
-	sidnboard2 dut(
+	top dut(
 			.CLK_IN(tb_clk),
 			.RS232_RX_i(tb_rx)
 		);

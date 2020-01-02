@@ -1,11 +1,6 @@
-#IVERILOG=iverilog
-#VVP=vvp
-#YOSYS=yosys
-#ICEPACK=icepack
-#ARACHNE=arachne-pnr
-#NEXTPNR=nextpnr-ice40
-
+# self-compiled tools home
 TOOLS_PREFIX=$(HOME)/devel/hdl-learning/bin
+
 IVERILOG=$(TOOLS_PREFIX)/bin/iverilog
 IVERILOG_FLAGS=-g2005-sv
 VVP=$(TOOLS_PREFIX)/bin/vvp
@@ -14,17 +9,34 @@ ICEPACK=$(TOOLS_PREFIX)/bin/icepack
 ICEPROG=$(TOOLS_PREFIX)/bin/iceprog
 NEXTPNR=$(TOOLS_PREFIX)/bin/nextpnr-ice40
 
+# flags set up for hx8k-ct256 variant
 NEXTPNR_FLAGS=--hx8k --package ct256 --force 
 ARACHNE_FLAGS="-d 8k -P ct256"
-
 PCF=hx8k-ct256.pcf
 
-SIM_OBJECT = sidnboard
+SIM_OBJECT = sidnboard2
 FPGA_OBJECT = $(SIM_OBJECT)
-TOP_OBJECT = $(SIM_OBJECT)
+TOP_OBJECT = top
 
-BAUDRATE = 115200
+#BAUDRATE = 150
+#BAUDRATE = 115200
 #BAUDRATE = 230400
+#BAUDRATE = 460800
+#BAUDRATE = 921600
+BAUDRATE = 3000000
+
+# Tool Examples:
+# transforms source into PCM stream of:
+# - 1 channel
+# - 16bit signed PCM little-endian
+# - 11025 Hz sample frequency
+# ffmpeg -i $(SONG) -ac 1 -f s16le -acodec pcm_s16le -ar 11025 song.raw
+#
+# play stream:
+# aplay -f s16le -c 1 -t raw -r 11025 song.raw
+#
+# send raw bytes (in hex) through UART:
+# printf '\x18\x01\x00\x00\x01\x20\x05\x80\x06\xf5\x04\x21' > /dev/ttyUSB1 
 
 all: $(notdir $(CURDIR)).bin
 
@@ -62,8 +74,9 @@ simclean:
 clean:
 	rm -f *.bin *.asc *.rpt *.vvp *.vcd *.nljson *.pcm
 
+# sets up tty
 tty:
 	stty -F /dev/ttyUSB1 cs8 -hup -parenb -cstopb -clocal -echo raw speed $(BAUDRATE)
 
 .PRECIOUS: %.bin %.asc %.nljson 
-.PHONY: all explain install clean simclean sim
+.PHONY: all explain install clean simclean sim tty

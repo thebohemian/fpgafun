@@ -1,11 +1,15 @@
-`include "../common/rxuart.v"
+`include "../common/uart_rx.v"
+`include "../common/clocks/counter_clock_enable.v"
 `include "../common/sid/sid8580.v"
 `include "../common/fo_sigma_delta_dac.v"
 
-module sidnboard2(
+module top(
 		input CLK_IN,
+		
 		input UART_RX_i,
+		
 		output GPIO_AUDIO,
+		
 		output LED_D9,
 		output LED_D8,
 		output LED_D7,
@@ -16,12 +20,9 @@ module sidnboard2(
 		output LED_D2);
 
 	localparam MAIN_CLOCK_FREQ = 12_000_000;
-	localparam UART_FREQ = 230_400;
-	localparam UART_COUNTER = MAIN_CLOCK_FREQ / UART_FREQ;
-
 	localparam DAC_CLOCK_FREQ = 48_000;
-	localparam DAC_COUNTER = MAIN_CLOCK_FREQ / DAC_CLOCK_FREQ;
-	reg [31:0] dac_counter = DAC_COUNTER - 1;
+	
+	localparam BAUDRATE = 3_000_000;
 
 	reg [7:0] resetn_counter = 2;
 	wire RSTn_i;
@@ -53,7 +54,8 @@ module sidnboard2(
 
 	wire [17:0] audio_dat;					// 18bit audio data output
 	
-	reg extfilter_en;
+	wire dac_ce;
+	
 
 	// generates a 1Mhz signal for the SID (original speed)
 	assign sid_ce_1m = sid_clk_delay == 0;
@@ -63,12 +65,6 @@ module sidnboard2(
 	end
 	
 	assign RSTn_i = (resetn_counter == 0);
-
-	always @(posedge CLK_IN) begin
-		dac_counter <= (dac_counter > 0) ? dac_counter - 1 : DAC_COUNTER - 1;
-	end
-	
-	assign dac_ce = dac_counter == 0;
 
 	always @(posedge CLK_IN) begin
 		if (!RSTn_i) begin
@@ -123,33 +119,54 @@ module sidnboard2(
 		end
 	end
 	
-	rxuart #(.CLOCK_DIVIDE(UART_COUNTER/4)) rxuart(
+	counter_clock_enable
+		#(
+			.CLK_FREQ(MAIN_CLOCK_FREQ),
+			.COUNTER_FREQ(DAC_CLOCK_FREQ),
+		)
+		clock_enable
+		(
+			.en(dac_ce),
+			
+			.clk(CLK_IN)
+		);
+
+	uart_rx
+		#(
+			.CLK_FREQ(MAIN_CLOCK_FREQ),
+			.BAUDRATE(BAUDRATE)
+		)
+		uart0(
 			.rx(UART_RX_i),
-			.rx_byte(rx_data),
+			.rx_data(rx_data),
 			.received(rx_received),
+			
 			.clk(CLK_IN)
 		);
 
 	sid8580 sid0(
+			.ce_1m(sid_ce_1m),
+
 			.we(sid_write_en),
 			.addr(sid_addr),
 			.data_in(sid_data),
+			
 			.audio_data(audio_dat),
-			.ce_1m(sid_ce_1m),
-			.extfilter_en(extfilter_en),
+			
 			.reset(sid_reset),
+			
 			.clk(CLK_IN)
 		);
 
-	fo_sigma_delta_dac #(.BITS(16)) dac1 (
-			.in(audio_dat[17:2]),
+	fo_sigma_delta_dac
+		#(.BITS(18)) dac1 (
+			.in(audio_dat),
 			.out(GPIO_AUDIO),
 			
 			.clk(dac_ce)
 		);
 
 	// LEDs show the data byte
-	//	assign { LED_D9, LED_D8, LED_D7, LED_D6, LED_D5, LED_D4, LED_D3, LED_D2 } = {0,0,0, sid_addr };
 	assign { LED_D9, LED_D8, LED_D7, LED_D6, LED_D5, LED_D4, LED_D3, LED_D2 } = sid_data;
 
 endmodule

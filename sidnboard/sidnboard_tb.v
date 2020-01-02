@@ -23,7 +23,7 @@ module sidnboard_tb();
 
 	always #tb_phase_length tb_clk = !tb_clk;
 
-	sidnboard dut(
+	top dut(
 			.CLK_IN(tb_clk)
 		);
 

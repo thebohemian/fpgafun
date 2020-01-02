@@ -3,7 +3,7 @@
 `include "../common/sid/sid8580.v"
 `include "../common/fo_sigma_delta_dac.v"
 
-module sidnboard(
+module top(
 		input CLK_IN,
 		output GPIO_AUDIO
 		);
