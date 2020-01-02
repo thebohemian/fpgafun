@@ -37,8 +37,6 @@ module top(
 	wire [7:0] leds;
 	assign { LED_D9, LED_D8, LED_D7, LED_D6, LED_D5, LED_D4, LED_D3, LED_D2 } = leds;
 
-//	localparam SPEED = 162;	// -> weirdest effect ever
-//	localparam SPEED = 128; // -> also great effect
 	localparam MAIN_CLOCK_FREQ = 12_000_000;
 	
 	// UART frequency/speed
@@ -48,8 +46,9 @@ module top(
 	// FIFO frequency (frequency of the PCM samples) 
 	localparam FIFO_CLOCK_FREQ = 44_100;
 	
-	// DAC frequency (Sigma-Delta works best when oversampling many times)
-	localparam DAC_SPEED = 180;
+	// DAC frequency (Sigma-Delta works best when oversampling many times, IOW run as fast as possible)
+	//localparam DAC_SPEED = 276;	// still works but bad quality because of signals in the FPGA not reaching destinations in time
+	localparam DAC_SPEED = 180;		// best results and within timing limits
 	localparam DAC_CLOCK_FREQ = DAC_SPEED * 1_000_000;
 	wire       dac_clk;							
 	wire       locked;							
@@ -69,12 +68,12 @@ module top(
 	reg [7:0]	rx_audio_buf = 0;
 	reg [1:0]	rx_state = RX_WAIT_DATA_0;
 	
-	wire		fifo_rd_en;
-	reg			fifo_wr_en = 0;
-
 	// data to write to fifo
 	localparam FIFO_SIZE = 4096;
+	localparam FIFO_ALMOST_EMPTY_SIZE = 3*(FIFO_SIZE / 10);	// 30% 
+	localparam FIFO_ALMOST_FULL_SIZE = FIFO_SIZE - 5*(FIFO_SIZE / 10);	// 50% 
 	localparam FIFO_MAX_BITS = $clog2(FIFO_SIZE);
+
 	wire fifo_empty;
 	wire fifo_full;
 	wire [(FIFO_MAX_BITS-1):0] fifo_fill;
@@ -83,8 +82,12 @@ module top(
 	wire fifo_almost_empty;
 	wire fifo_almost_full;
 	
-	assign fifo_almost_empty = (fifo_fill <= 3*(FIFO_SIZE / 10));
-	assign fifo_almost_full = (fifo_fill >= FIFO_SIZE - 5*(FIFO_SIZE / 10));
+	assign fifo_almost_empty = fifo_fill <= FIFO_ALMOST_EMPTY_SIZE;
+	assign fifo_almost_full = fifo_fill >= FIFO_ALMOST_FULL_SIZE;
+
+	// fifo read and write enable
+	wire		fifo_rd_en;
+	reg			fifo_wr_en = 0;
 	
 	// data from fifo going to dac
 	wire [(FIFO_BITS-1):0] fifo_out;
