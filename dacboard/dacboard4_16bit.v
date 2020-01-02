@@ -1,3 +1,4 @@
+`include "../common/iceclock/iceclock.v"
 `include "../common/uart_rx.v"
 `include "../common/fo_sigma_delta_dac.v"
 `include "../common/clocks/counter_clock_enable.v"
@@ -36,7 +37,14 @@ module top(
 	wire [7:0] leds;
 	assign { LED_D9, LED_D8, LED_D7, LED_D6, LED_D5, LED_D4, LED_D3, LED_D2 } = leds;
 
-	localparam MAIN_CLOCK_FREQ = 12_000_000;
+//	localparam SPEED = 162;	// -> weirdest effect ever
+//	localparam SPEED = 128; // -> also great effect
+	localparam SPEED = 120;
+	localparam MAIN_CLOCK_FREQ = SPEED * 1_000_000;
+	
+	wire       sysclk;							
+	wire       locked;							
+	iceclock #(.speed(SPEED)) clock0 (.clock12mhz_in(CLK_IN), .clock_out(sysclk), .locked(locked));
 	
 	// UART frequency/speed
 	localparam BAUDRATE = 3_000_000;
@@ -45,7 +53,8 @@ module top(
 	localparam FIFO_CLOCK_FREQ = 44_100;
 	
 	// DAC frequency (Sigma-Delta works best when oversampling many times)
-	localparam DAC_CLOCK_FREQ = 64*48_000;
+//	localparam DAC_CLOCK_FREQ = 64*48_000;
+	localparam DAC_CLOCK_FREQ = MAIN_CLOCK_FREQ;
 	
 	// byte transfer states
 	localparam DAC_BITS = 16;
@@ -81,7 +90,6 @@ module top(
 	// data from fifo going to dac
 	wire [(FIFO_BITS-1):0] fifo_out;
 	
-	wire dac_ce;
 	wire [(DAC_BITS-1):0] dac_l_in;
 	wire [(DAC_BITS-1):0] dac_r_in;
 	wire dac_reset;
@@ -93,7 +101,7 @@ module top(
 	// reset dac when fifo invalid
 	assign dac_reset = fifo_empty;
 			
-	always @(posedge CLK_IN) begin
+	always @(posedge sysclk) begin
 		fifo_wr_en <= 0;
 		
 		if (rx_received) begin
@@ -126,25 +134,13 @@ module top(
 	counter_clock_enable
 		#(
 			.CLK_FREQ(MAIN_CLOCK_FREQ),
-			.COUNTER_FREQ(DAC_CLOCK_FREQ),
-		)
-		dac_clock_enable
-		(
-			.en(dac_ce),
-			
-			.clk(CLK_IN)
-		);
-		
-	counter_clock_enable
-		#(
-			.CLK_FREQ(MAIN_CLOCK_FREQ),
 			.COUNTER_FREQ(FIFO_CLOCK_FREQ),
 		)
 		fifo_clock_enable
 		(
 			.en(fifo_rd_en),
 			
-			.clk(CLK_IN)
+			.clk(sysclk)
 		);
 
 	uart_rx
@@ -157,7 +153,7 @@ module top(
 			.rx_data(rx_data),
 			.received(rx_received),
 			
-			.clk(CLK_IN)
+			.clk(sysclk)
 		);
 		
 	fifo #(.BITS(FIFO_BITS), .SIZE(FIFO_SIZE))
@@ -173,7 +169,7 @@ module top(
 						
 			.fill(fifo_fill),
 				
-			.clk(CLK_IN)
+			.clk(sysclk)
 		);
 
 	// left channel dac
@@ -183,7 +179,7 @@ module top(
 			.in(dac_l_in),
 			.out(GPIO_AUDIO_L),
 			
-			.clk(dac_ce)
+			.clk(sysclk)
 		);
 	
 	// right channel dac
@@ -193,7 +189,7 @@ module top(
 			.in(dac_r_in),
 			.out(GPIO_AUDIO_R),
 			
-			.clk(dac_ce)
+			.clk(sysclk)
 		);
 	
 	assign leds = fifo_fill[(FIFO_MAX_BITS-1):(FIFO_MAX_BITS-9)];
