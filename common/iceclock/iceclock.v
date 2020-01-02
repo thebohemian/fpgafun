@@ -8,6 +8,7 @@
 `include "clock124.5mhz.v"
 `include "clock127.5mhz.v"
 `include "clock150mhz.v"
+`include "clock162mhz.v"
 `include "clock180mhz.v"
 `include "clock204mhz.v"
 `include "clock240mhz.v"
@@ -52,8 +53,12 @@ module iceclock
 			125: `instantiate(1245)	// actually 124.5
 			128: `instantiate(1275)	// actually 127.5
 			150: `instantiate(150)
+			162: `instantiate(162)
 			180: `instantiate(180)
 			204: `instantiate(204)
+			240: `instantiate(240)
+			264: `instantiate(264)
+			276: `instantiate(276)
 			default:
 				$error("invalid speed!");
 		endcase
