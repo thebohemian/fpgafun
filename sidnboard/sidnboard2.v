@@ -26,7 +26,8 @@ module top(
 	localparam NTSC_SID_CLOCK_FREQ = 1_022_730;
 	localparam SID_CLOCK_FREQ = IDEAL_SID_CLOCK_FREQ;
 	
-	localparam DAC_CLOCK_FREQ = 48_000;
+	//localparam DAC_CLOCK_FREQ = 11_025;
+	localparam DAC_CLOCK_FREQ = 48_000*64;
 	
 	localparam BAUDRATE = 3_000_000;
 

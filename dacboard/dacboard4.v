@@ -39,18 +39,13 @@ module top(
 	localparam MAIN_CLOCK_FREQ = 12_000_000;
 	
 	// UART frequency/speed
-//	localparam BAUDRATE = 115_200;
-//	localparam BAUDRATE = 230_400;
-//	localparam BAUDRATE = 460_800;
-//	localparam BAUDRATE = 921_600;
-//	localparam BAUDRATE = 921_600;
 	localparam BAUDRATE = 3_000_000;
-		
-	//localparam DAC_CLOCK_FREQ = 8_000;
-//	localparam DAC_CLOCK_FREQ = 11_025;
-//	localparam DAC_CLOCK_FREQ = 22_050;
-	localparam DAC_CLOCK_FREQ = 44_100;
-	//localparam DAC_CLOCK_FREQ = 48_000;
+	
+	// FIFO frequency (frequency of the PCM samples) 
+	localparam FIFO_CLOCK_FREQ = 44_100;
+	
+	// DAC frequency (Sigma-Delta works best when oversampling many times)
+	localparam DAC_CLOCK_FREQ = 64*48_000;
 	
 	// byte transfer states
 	localparam DAC_BITS = 8;
@@ -81,13 +76,12 @@ module top(
 	
 	// data from fifo going to dac
 	wire [(FIFO_BITS-1):0] fifo_out;
+	wire fifo_rd_en;
 	
 	wire dac_ce;
 	wire [(DAC_BITS-1):0] dac_l_in;
 	wire [(DAC_BITS-1):0] dac_r_in;
 	wire dac_reset;
-
-	assign fifo_rd_en = dac_ce;
 	
 	// play output
 	assign dac_l_in = fifo_out[15:8];
@@ -121,9 +115,21 @@ module top(
 			.CLK_FREQ(MAIN_CLOCK_FREQ),
 			.COUNTER_FREQ(DAC_CLOCK_FREQ),
 		)
-		clock_enable
+		dac_clock_enable
 		(
 			.en(dac_ce),
+			
+			.clk(CLK_IN)
+		);
+		
+	counter_clock_enable
+		#(
+			.CLK_FREQ(MAIN_CLOCK_FREQ),
+			.COUNTER_FREQ(FIFO_CLOCK_FREQ),
+		)
+		fifo_clock_enable
+		(
+			.en(fifo_rd_en),
 			
 			.clk(CLK_IN)
 		);

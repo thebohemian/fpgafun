@@ -14,7 +14,7 @@ NEXTPNR_FLAGS=--hx8k --package ct256 --force
 ARACHNE_FLAGS="-d 8k -P ct256"
 PCF=hx8k-ct256.pcf
 
-SIM_OBJECT = dacboard4_16bit
+SIM_OBJECT = dacboard4
 FPGA_OBJECT = $(SIM_OBJECT)
 TOP_OBJECT = top
 
@@ -31,6 +31,12 @@ BAUDRATE = 3000000
 # - 16bit signed PCM little-endian
 # - 11025 Hz sample frequency
 # ffmpeg -i $(SONG) -ac 1 -f s16le -acodec pcm_s16le -ar 11025 song.raw
+#
+# - 2 channel
+# - 16bit signed PCM little-endian
+# - 44100 Hz sample frequency
+#
+# ffmpeg -i $(SONG) -ac 2 -f s16le -acodec pcm_s16le -ar 44100 song.raw
 #
 # play stream:
 # aplay -f s16le -c 1 -t raw -r 11025 song.raw
