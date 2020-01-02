@@ -39,22 +39,21 @@ module top(
 
 //	localparam SPEED = 162;	// -> weirdest effect ever
 //	localparam SPEED = 128; // -> also great effect
-	localparam SPEED = 120;
-	localparam MAIN_CLOCK_FREQ = SPEED * 1_000_000;
-	
-	wire       sysclk;							
-	wire       locked;							
-	iceclock #(.speed(SPEED)) clock0 (.clock12mhz_in(CLK_IN), .clock_out(sysclk), .locked(locked));
+	localparam MAIN_CLOCK_FREQ = 12_000_000;
 	
 	// UART frequency/speed
 	localparam BAUDRATE = 3_000_000;
+	wire		sysclk = CLK_IN;
 
 	// FIFO frequency (frequency of the PCM samples) 
 	localparam FIFO_CLOCK_FREQ = 44_100;
 	
 	// DAC frequency (Sigma-Delta works best when oversampling many times)
-//	localparam DAC_CLOCK_FREQ = 64*48_000;
-	localparam DAC_CLOCK_FREQ = MAIN_CLOCK_FREQ;
+	localparam DAC_SPEED = 180;
+	localparam DAC_CLOCK_FREQ = DAC_SPEED * 1_000_000;
+	wire       dac_clk;							
+	wire       locked;							
+	iceclock #(.speed(DAC_SPEED)) clock0 (.clock12mhz_in(CLK_IN), .clock_out(dac_clk), .locked(locked));
 	
 	// byte transfer states
 	localparam DAC_BITS = 16;
@@ -179,7 +178,7 @@ module top(
 			.in(dac_l_in),
 			.out(GPIO_AUDIO_L),
 			
-			.clk(sysclk)
+			.clk(dac_clk)
 		);
 	
 	// right channel dac
@@ -189,7 +188,7 @@ module top(
 			.in(dac_r_in),
 			.out(GPIO_AUDIO_R),
 			
-			.clk(sysclk)
+			.clk(dac_clk)
 		);
 	
 	assign leds = fifo_fill[(FIFO_MAX_BITS-1):(FIFO_MAX_BITS-9)];

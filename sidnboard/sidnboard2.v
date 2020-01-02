@@ -25,10 +25,7 @@ module top(
 	localparam PAL_SID_CLOCK_FREQ = 985_250;
 	localparam NTSC_SID_CLOCK_FREQ = 1_022_730;
 	localparam SID_CLOCK_FREQ = IDEAL_SID_CLOCK_FREQ;
-	
-	//localparam DAC_CLOCK_FREQ = 11_025;
-	localparam DAC_CLOCK_FREQ = 48_000*64;
-	
+		
 	localparam BAUDRATE = 3_000_000;
 
 	localparam RX_WAIT_ADDR = 0;
@@ -77,18 +74,6 @@ module top(
 	counter_clock_enable
 		#(
 			.CLK_FREQ(MAIN_CLOCK_FREQ),
-			.COUNTER_FREQ(DAC_CLOCK_FREQ),
-		)
-		dac_clock_enable
-		(
-			.en(dac_ce),
-			
-			.clk(CLK_IN)
-		);
-		
-	counter_clock_enable
-		#(
-			.CLK_FREQ(MAIN_CLOCK_FREQ),
 			.COUNTER_FREQ(SID_CLOCK_FREQ),
 		)
 		sid_clock_enable
@@ -130,7 +115,7 @@ module top(
 			.in(audio_dat),
 			.out(GPIO_AUDIO),
 			
-			.clk(dac_ce)
+			.clk(CLK_IN)
 		);
 
 	// LEDs show the data byte

@@ -5,19 +5,21 @@ module fo_sigma_delta_dac
 		
 		(
 		input reset,
-		input [(BITS-1):0] in,
+		input [MSB:0] in,
 		output out,
 		
 		input clk
 		);
 		
-	reg [BITS:0] accumulator = 0;
-	
 	localparam MSB = BITS - 1;
+	
+	reg [BITS:0] accumulator = 0;
 
+	wire [MSB:0] unsigned_in = {~in[MSB], in[MSB-1:0]};
+		
 	always @(posedge clk)
-			accumulator <= accumulator[MSB:0] + {~in[MSB], in[MSB-1:0]};
-
-	assign out = (!reset ? accumulator[BITS] : 0) ^ INV;
+		accumulator <= accumulator[MSB:0] + unsigned_in;
+		
+	assign out = reset ? 0 : (accumulator[BITS] ^ INV);
 
 endmodule
