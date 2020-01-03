@@ -53,7 +53,7 @@ module sram_tb();
 		tb_clk <= 1'b0;
 		tb_rx <= 1;
 
-		#1000 send_byte(8'h55);
+		#1000 send_byte(8'haa);
 			
 		#(100*PULSE_LENGTH) $finish;
 	end
