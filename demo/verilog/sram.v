@@ -1,4 +1,4 @@
-//`include "../../common/iceclock/iceclock.v"
+`include "../../common/iceclock/iceclock.v"
 `include "../../common/clocks/counter_clock.v"
 `include "../../common/uart_rx.v"
 `include "../../common/sram_23lc1024.v"
@@ -36,18 +36,16 @@ module top(
 	wire [7:0] leds = { LED_D9, LED_D8, LED_D7, LED_D6, LED_D5, LED_D4, LED_D3, LED_D2 };
 	wire [7:0] cables = { PIN_G14_o, PIN_J15_o, PIN_H16_o, PIN_G16_o, PIN_F16_o, PIN_E16_o, PIN_D16_i, PIN_C16_o };
 
-	localparam SPEED = 12;
-	/*
+	localparam SPEED = 60;
 	wire       sysclk;							
 	wire       locked;							
 	iceclock #(.speed(SPEED)) clock0 (.clock12mhz_in(CLK_IN), .clock_out(sysclk), .locked(locked));
-	*/
-	wire sysclk = CLK_IN;
-	
+/*	wire sysclk = CLK_IN;
+*/	
 	// Main clock speed is important for some modules to know.
 	localparam MAIN_CLOCK_FREQ = SPEED * 1_000_000;
 	
-//	localparam SRAM_FREQ = 15_000_000;
+	localparam SRAM_FREQ = 30_000_000;
 	localparam SRAM_FREQ = 1_000_000;
 	// watch the data transfer is slow motion
 //	localparam SRAM_FREQ = 2;
