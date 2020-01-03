@@ -20,7 +20,9 @@ module uart_rx
 	
 	localparam COUNTER_BITS = $clog2(BIT_SAMPLE_COUNTER);
 	
-	reg [COUNTER_BITS-1:0] counter;
+	initial received = 0;
+	
+	reg [COUNTER_BITS-1:0] counter = 0;
 	reg [1:0] state = STATE_IDLE;
 	reg [8:0] bits;
 	

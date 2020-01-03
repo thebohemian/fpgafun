@@ -10,6 +10,8 @@ module spi_tx(
 		input clk_en,
 		input clk
 		);
+
+	initial serial_clock <= 0;
 	
 	reg [2:0] counter = 0;
 	reg [7:0] shift_reg;
@@ -33,9 +35,9 @@ module spi_tx(
 			STATE_SHIFTING: begin
 				if (clk_en) begin
 					serial_out <= shift_reg[counter];
+					serial_clock <= 1;
 					
 					if (counter > 0) begin
-						serial_clock <= 1;
 						counter <= counter - 1;
 					end else begin
 						sent <= 1;

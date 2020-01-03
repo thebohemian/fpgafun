@@ -7,9 +7,8 @@ module sram_tb();
     12MHz gives a length of 83ns per cycle
     so 41.5 units to change the edge
 	 */
-	localparam MAIN_CLOCK_FREQ = 18_000_000;
+	localparam MAIN_CLOCK_FREQ = 12_000_000;
 	localparam UART_FREQ = 115_200;
-	
 	localparam UART_COUNTER = MAIN_CLOCK_FREQ / UART_FREQ;
 	
 	localparam PULSE_LENGTH = 83*UART_COUNTER;
@@ -19,11 +18,7 @@ module sram_tb();
 
 	always #41.5 tb_clk = !tb_clk;
 	
-	top #(
-			.CLK_FREQ(MAIN_CLOCK_FREQ),
-			.BAUDRATE(UART_FREQ)
-		)
-		dut(
+	top dut(
 			.UART_RX_i(tb_rx),
 			.CLK_IN(tb_clk)
 		);
@@ -58,7 +53,7 @@ module sram_tb();
 		tb_clk <= 1'b0;
 		tb_rx <= 1;
 
-		#100 send_byte(8'h55);
+		#1000 send_byte(8'h55);
 			
 		#(100*PULSE_LENGTH) $finish;
 	end

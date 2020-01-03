@@ -41,11 +41,12 @@ module top(
 	wire       locked;							
 	iceclock #(.speed(SPEED)) clock0 (.clock12mhz_in(CLK_IN), .clock_out(sysclk), .locked(locked));
 	*/
+	wire sysclk = CLK_IN;
 	
 	// Main clock speed is important for some modules to know.
 	localparam MAIN_CLOCK_FREQ = SPEED * 1_000_000;
 	
-	localparam SRAM_FREQ = 1_000_0000;
+	localparam SRAM_FREQ = 1_000_000;
 	
 	// UART Baudrate
 	localparam UART_FREQ = 115_200;
@@ -54,7 +55,7 @@ module top(
 	wire CSn = PIN_C16_o;
 	
 	// 1 - SO/SIO1
-//	wire SO = PIN_D16_i;
+	wire SO = PIN_D16_i;
 	
 	// 2 - SIO2
 	wire SIO2 = PIN_E16_o;
@@ -68,12 +69,6 @@ module top(
 	// 5 - SI/SIO0
 	wire SI = PIN_H16_o;
 	
-	// Read/write enable for SRAM
-	reg sram_rd_en = 0;
-	reg sram_wr_en = 0;
-	
-	// clock enable for the sram (max 20Mhz)
-	wire clk_en;
 	
 	// Data from UART and signalisation
 	wire [7:0] rx_data;
@@ -82,6 +77,13 @@ module top(
 	
 	reg [23:0] address = 24'h0_00;
 	reg [7:0] data = 0;
+	
+	// Read/write enable for SRAM
+	reg sram_rd_en = 0;
+	reg sram_wr_en = 0;
+	
+	// clock enable for the sram (max 20Mhz)
+	wire sram_clk_en;
 	
 	wire [7:0] sram_data;
 	wire sram_completed;
@@ -106,7 +108,7 @@ module top(
 			end
 			STATE_WAIT_WRITE_COMPLETED: begin
 				if (sram_completed) begin
-					sram_rd_en <= 0;
+					sram_rd_en <= 1;
 					state <= STATE_WAIT_READ_COMPLETED;
 				end
 			end

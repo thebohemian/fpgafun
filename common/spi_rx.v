@@ -11,6 +11,8 @@ module spi_rx(
 		input clk
 		);
 	
+	initial serial_clock <= 0;
+	
 	reg [8:0] shift_reg;
 
 	localparam STATE_IDLE = 0;

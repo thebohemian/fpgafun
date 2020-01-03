@@ -37,6 +37,8 @@ module sram_23lc1024
 	localparam STATE_WRITE_WAIT_SENT_DATA_BYTE = 10;
 	reg [3:0] state = STATE_IDLE;
 	
+	initial CSn <= 1;
+	
 	reg [7:0] data;
 	reg [23:0] address;
 	
@@ -50,6 +52,9 @@ module sram_23lc1024
 	
 	always @ (posedge clk) begin
 		completed <= 0;
+		tx_rd_en <= 0;
+		rx_rd_en <= 0;
+		
 		case (state)
 			STATE_IDLE:
 				if (rd_en) begin
@@ -89,7 +94,7 @@ module sram_23lc1024
 			STATE_WRITE_WAIT_SENT_ADDRESS_BYTE_3:
 				if (tx_sent) begin
 					tx_rd_en <= 1;
-					tx_data <= address[15:8];
+					tx_data <= data_in;
 					state <= STATE_WRITE_WAIT_SENT_DATA_BYTE;
 				end
 			STATE_WRITE_WAIT_SENT_DATA_BYTE:
