@@ -27,9 +27,9 @@ module iceclock
 		output clock_out,
 		output locked
 		);
-`define instantiate(speed) """
+`define instantiate(speedarg) """
     begin
-	pll``speed`` pll (
+	pll``speedarg`` pll (
 			.clock_in(clock12mhz_in),
 			.clock_out(clock_out),
 			.locked(locked)

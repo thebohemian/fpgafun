@@ -13,7 +13,7 @@
 module counter_clock_enable
 		#(
 		parameter CLK_FREQ = 12_000_000,
-		parameter COUNTER_FREQ = 6_000_000,
+		parameter COUNTER_FREQ = 6_000_000
 		)
 		
 		(

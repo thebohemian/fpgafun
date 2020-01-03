@@ -22,9 +22,12 @@ ARACHNE_FLAGS="-d 8k -P ct256"
 #SIM_OBJECT = rxuart2
 #SIM_OBJECT = uart_test
 #SIM_OBJECT = i2c_tx
+FPGA_OBJECT= sram
 #FPGA_OBJECT = pincontrol
-FPGA_OBJECT = 8leds_4094be
+#FPGA_OBJECT = 8leds_4094be
 #FPGA_OBJECT = 16leds_mcp23017
+
+SIM_OBJECT = $(FPGA_OBJECT)
 
 TOP_OBJECT = top
 
@@ -39,7 +42,7 @@ BAUDRATE = 115200
 all: $(notdir $(CURDIR)).bin
 
 %.vvp: %.v
-	$(IVERILOG) -g2005-sv -o $@ $<
+	$(IVERILOG) -grelative-include -g2005-sv -o $@ $<
 
 %.vcd: %.vvp
 	$(VVP) $<

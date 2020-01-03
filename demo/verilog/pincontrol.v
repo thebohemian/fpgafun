@@ -27,9 +27,9 @@ module top(
 		
 		input UART_RX_i,
 
-		output reg PIN_C16_o,
-		output reg PIN_D16_o,
-		output reg PIN_E16_o,
+		output PIN_C16_o,
+		output PIN_D16_i,
+		output PIN_E16_o,
 
 		output PIN_F16_o,
 		output PIN_G16_o,
@@ -51,16 +51,18 @@ module top(
 	
 	// UART Baudrate
 	localparam UART_FREQ = 115_200;
-	//localparam UART_FREQ = 230_400;
-	//localparam UART_FREQ = 460_800;
-	//localparam UART_FREQ = 921_600;
-	//localparam UART_FREQ = 1_000_000;
-	//localparam UART_FREQ = 3_000_000;
-	//localparam UART_FREQ = 4_000_000;
 	
 	reg [7:0] cables; 
-//	assign { PIN_C16, PIN_D16, PIN_E16, PIN_F16, PIN_G16, PIN_H16, PIN_J15, PIN_G14 } = cables; 
-//	assign { PIN_G14, PIN_J15, PIN_H16, PIN_G16, PIN_F16, PIN_E16, PIN_D16, PIN_C16 } = cables; 
+	reg nc0;
+	assign { PIN_G14_o, PIN_J15_o, PIN_H16_o, PIN_G16_o, PIN_F16_o, PIN_E16_o, nc0, PIN_C16_o } = cables;
+	
+	// LC23A1024
+	// 0 - CSn
+	// 1 - SO/SIO1
+	// 2 - SIO2
+	// 3 - HOLDn/SIO3
+	// 4 - SCK
+	// 5 - SI/SIO0
 	
 	// Read enable for shifting out
 	reg rd_en = 0;
@@ -68,18 +70,13 @@ module top(
 	// Data from UART and signalisation
 	wire [7:0] rx_data;
 	wire received;
-	
-	wire pin_clock;
-	
+		
 	always @(posedge sysclk) begin
 		rd_en <= 0;
 		
 		// When data from UART arrives, forward it to the Shift Register
 		if (received) begin
 			cables <= rx_data;
-			PIN_C16_o <= rx_data[0];
-			PIN_D16_o <= rx_data[1];
-			PIN_E16_o <= rx_data[2];
 			
 			rd_en <= 1;
 		end
@@ -102,6 +99,6 @@ module top(
 		);
 	
 	// The LEDs on the board itself reflect the byte received via UART
-	assign { LED_D9, LED_D8, LED_D7, LED_D6, LED_D5, LED_D4, LED_D3, LED_D2 } = cables;
+	assign { LED_D9, LED_D8, LED_D7, LED_D6, LED_D5, LED_D4, LED_D3, LED_D2 } = { cables[7:2], PIN_D16_i, cables[0] };
 	
 endmodule

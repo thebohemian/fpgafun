@@ -56,7 +56,6 @@ set_io PIN_B16_o B16
 set_io PIN_D14_o D14
 set_io PIN_D15_o D15
 
-
 set_io -pullup yes D16_i D16
 set_io -pullup yes C16_i C16
 
