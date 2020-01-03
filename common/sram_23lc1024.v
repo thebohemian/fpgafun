@@ -30,20 +30,22 @@ module sram_23lc1024
 		input clk
 		);
 	
+	`define OPCODE_WRITE	8'h02
+	`define OPCODE_READ		8'h03
+	
+	localparam OP_READ = 0;
+	localparam OP_WRITE = 1;
+	reg op = OP_READ;
+	
 	localparam STATE_IDLE = 0;
-	localparam STATE_READ_START = 11;
-	localparam STATE_READ_WAIT_SENT_COMMAND = 1;
-	localparam STATE_READ_WAIT_SENT_ADDRESS_BYTE_1 = 2;
-	localparam STATE_READ_WAIT_SENT_ADDRESS_BYTE_2 = 3;
-	localparam STATE_READ_WAIT_SENT_ADDRESS_BYTE_3 = 4;
-	localparam STATE_READ_WAIT_RECEIVED_DATA_BYTE = 5;
-	localparam STATE_WRITE_START = 12;
-	localparam STATE_WRITE_WAIT_SENT_COMMAND = 6;
-	localparam STATE_WRITE_WAIT_SENT_ADDRESS_BYTE_1 = 7;
-	localparam STATE_WRITE_WAIT_SENT_ADDRESS_BYTE_2 = 8;
-	localparam STATE_WRITE_WAIT_SENT_ADDRESS_BYTE_3 = 9;
-	localparam STATE_WRITE_WAIT_SENT_DATA_BYTE = 10;
-	localparam STATE_FINISH = 13;
+	localparam STATE_START = 1;
+	localparam STATE_WAIT_SENT_COMMAND = 2;
+	localparam STATE_WAIT_SENT_ADDRESS_BYTE_1 = 3;
+	localparam STATE_WAIT_SENT_ADDRESS_BYTE_2 = 4;
+	localparam STATE_WAIT_SENT_ADDRESS_BYTE_3 = 5;
+	localparam STATE_WAIT_RECEIVED_DATA_BYTE = 6;
+	localparam STATE_WAIT_SENT_DATA_BYTE = 7;
+	localparam STATE_FINISH = 8;
 	reg [3:0] state = STATE_IDLE;
 	
 	// HOLD feature not used.
@@ -74,82 +76,60 @@ module sram_23lc1024
 			STATE_IDLE:
 				if (rd_en) begin
 					address <= address_in;
-					state <= STATE_READ_START;
+					op <= OP_READ;
+					state <= STATE_START;
 					
 				end else if (wr_en) begin
 					address <= address_in;
 					data <= data_in;
+					op <= OP_WRITE;
 					
-					state <= STATE_WRITE_START;
+					state <= STATE_START;
 				end
-			STATE_WRITE_START:
+			STATE_START:
 				if (!last_clk_ic && clk_ic) begin
 					CSn <= 0;			// enable device
 					tx_rd_en <= 1;
-					tx_data <= 8'h02;	// write command
-					state <= STATE_WRITE_WAIT_SENT_COMMAND;
+					tx_data <= (op == OP_READ) ? `OPCODE_READ : `OPCODE_WRITE;
+					state <= STATE_WAIT_SENT_COMMAND;
 				end
-			STATE_WRITE_WAIT_SENT_COMMAND:
+			STATE_WAIT_SENT_COMMAND:
 				if (tx_sent) begin
 					tx_rd_en <= 1;
 					tx_data <= address[23:16];
-					state <= STATE_WRITE_WAIT_SENT_ADDRESS_BYTE_1;
+					state <= STATE_WAIT_SENT_ADDRESS_BYTE_1;
 				end
-			STATE_WRITE_WAIT_SENT_ADDRESS_BYTE_1:
+			STATE_WAIT_SENT_ADDRESS_BYTE_1:
 				if (tx_sent) begin
 					tx_rd_en <= 1;
 					tx_data <= address[15:8];
-					state <= STATE_WRITE_WAIT_SENT_ADDRESS_BYTE_2;
+					state <= STATE_WAIT_SENT_ADDRESS_BYTE_2;
 				end
-			STATE_WRITE_WAIT_SENT_ADDRESS_BYTE_2:
+			STATE_WAIT_SENT_ADDRESS_BYTE_2:
 				if (tx_sent) begin
 					tx_rd_en <= 1;
 					tx_data <= address[7:0];
-					state <= STATE_WRITE_WAIT_SENT_ADDRESS_BYTE_3;
+					state <= STATE_WAIT_SENT_ADDRESS_BYTE_3;
 				end
-			STATE_WRITE_WAIT_SENT_ADDRESS_BYTE_3:
+			STATE_WAIT_SENT_ADDRESS_BYTE_3:
 				if (tx_sent) begin
-					tx_rd_en <= 1;
-					tx_data <= data_in;
-					state <= STATE_WRITE_WAIT_SENT_DATA_BYTE;
+					case (op)
+						OP_READ: begin
+							rx_rd_en <= 1;
+							state <= STATE_WAIT_RECEIVED_DATA_BYTE;
+						end
+						OP_WRITE: begin
+							tx_rd_en <= 1;
+							tx_data <= data_in;
+							state <= STATE_WAIT_SENT_DATA_BYTE;
+						end
+					endcase
 				end
-			STATE_WRITE_WAIT_SENT_DATA_BYTE:
+			STATE_WAIT_SENT_DATA_BYTE:
 				if (tx_sent) begin
 					state <= STATE_FINISH;
 				end
-			STATE_READ_START:
-				if (!last_clk_ic && clk_ic) begin
-					CSn <= 0;			// enable device
-					
-					tx_rd_en <= 1;
-					tx_data <= 8'h03;	// read command
-					
-					state <= STATE_READ_WAIT_SENT_COMMAND;
-				end
-			STATE_READ_WAIT_SENT_COMMAND:
-				if (tx_sent) begin
-					tx_rd_en <= 1;
-					tx_data <= address[23:16];
-					state <= STATE_READ_WAIT_SENT_ADDRESS_BYTE_1;
-				end
-			STATE_READ_WAIT_SENT_ADDRESS_BYTE_1:
-				if (tx_sent) begin
-					tx_rd_en <= 1;
-					tx_data <= address[15:8];
-					state <= STATE_READ_WAIT_SENT_ADDRESS_BYTE_2;
-				end
-			STATE_READ_WAIT_SENT_ADDRESS_BYTE_2:
-				if (tx_sent) begin
-					tx_rd_en <= 1;
-					tx_data <= address[7:0];
-					state <= STATE_READ_WAIT_SENT_ADDRESS_BYTE_3;
-				end
-			STATE_READ_WAIT_SENT_ADDRESS_BYTE_3:
-				if (tx_sent) begin
-					rx_rd_en <= 1;
-					state <= STATE_READ_WAIT_RECEIVED_DATA_BYTE;
-				end
-			STATE_READ_WAIT_RECEIVED_DATA_BYTE:
+			STATE_WAIT_RECEIVED_DATA_BYTE:
 				if (rx_received) begin
 					data <= rx_data;
 					state <= STATE_FINISH;
