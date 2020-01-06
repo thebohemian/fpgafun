@@ -6,127 +6,111 @@
  * 
  */
 module i2c_tx
-		#(
-		parameter BYTES=2
-		)
 		(
 		input rd_en,
 		input [7:0] data_in,
-		input [(INDEX_BITS-1):0] index_in,
+		
+		output reg sent,
 		
 		output reg sda,
-		output scl,
+		output reg scl,
 		
-		input i2c_clock,
+		input clk_i2c,
 		
 		input clk
 		);
-		
-	assign scl = i2c_clock;
 	
+	initial sent <= 0;
+	
+	initial sda <= 1;
+	initial scl <= 1;
+		
 	reg [2:0] counter = 0;
-	reg [7:0] shift_reg [BYTES];
+	reg [7:0] shift_reg;
 
-	localparam STATE_BOOT = 0;
 	localparam STATE_IDLE = 1;
 	localparam STATE_START = 2;
 	localparam STATE_PREPARE_BIT = 3;
 	localparam STATE_WAIT_HIGH = 4;
-	localparam STATE_WAIT_LOW = 5;
-	localparam STATE_ACK_HIGH = 6;
-	localparam STATE_ACK_LOW = 7;
-	localparam STATE_STOP = 8;
+	localparam STATE_PREPARE_ACK = 6;
+	localparam STATE_RECEIVE_ACK = 7;
+	reg [2:0] state = STATE_IDLE;
 	
-	reg [4:0] state = STATE_BOOT;
+	reg last_clk_i2c = 1;
 	
-	localparam TYPE_ADDRESS = 0;
-	localparam TYPE_DATA = 1;
-	reg byte_type;
-	
-	localparam INDEX_BITS = $clog2(BYTES);
-	reg [(INDEX_BITS-1):0] index = 0;
-	
-	reg [7:0] addr = 8'b0100_0000;
+	reg ongoing = 0;
 	
 	always @ (posedge clk) begin
+		last_clk_i2c <= clk_i2c;
+		sent <= 0;
+		
 		case (state)
-			STATE_BOOT: begin
-				if (!i2c_clock) begin
-					state <= STATE_IDLE;
-					sda <= 1;
-				end
-			end
 			STATE_IDLE: begin
+				if (last_clk_i2c && !clk_i2c) begin
+					// if negedge happens, then create the STOP condition
+					sda <= 1;
+					ongoing = 0;
+				end
 				if (rd_en) begin
-					shift_reg[index_in] <= data_in;
-					if (index_in == BYTES-1) begin
-						counter <= 7;
-						byte_type <= 0;
-						state <= STATE_START;
-					end
+					shift_reg <= data_in;
+					counter <= 7;
+					state <= (ongoing && clk_i2c) ? STATE_PREPARE_BIT : STATE_START;
 				end
 			end
 			STATE_START: begin
-				if (i2c_clock) begin
-					if (sda) begin
-						state <= STATE_PREPARE_BIT;
-						
-						// bus START
-						sda <= 0;
-					end
+				if (!last_clk_i2c && clk_i2c) begin
+					// posedge
+					// creates Start condition
+					ongoing <= 1;
+					sda <= 0;
+					state <= STATE_PREPARE_BIT;
 				end
 			end
 			STATE_PREPARE_BIT:
-				if (!i2c_clock) begin
+				if (last_clk_i2c && !clk_i2c) begin
+					// negedge -> put bit on SDA
+					sda <= shift_reg[counter];
+					
+					// drive clock down
+					scl <= 0;
+					
 					state <= STATE_WAIT_HIGH;
-						
-					// bus value
-					sda <= byte_type ? shift_reg[counter] : addr[counter];
 				end
 			STATE_WAIT_HIGH:
-				if (i2c_clock) begin
-					if (counter == 0) begin
-						state <= STATE_WAIT_LOW;
-					end else begin
-						state <= STATE_PREPARE_BIT;
-					end
+				if (!last_clk_i2c && clk_i2c) begin
+					// posedge
+					state <= (counter == 0) ? STATE_PREPARE_ACK : STATE_PREPARE_BIT;
+
+					// drive clock up
+					scl <= 1;
+					
 					counter <= counter - 1;
 				end
-			STATE_WAIT_LOW:
-				if (!i2c_clock) begin
-					state <= STATE_ACK_HIGH;
+			STATE_PREPARE_ACK:
+				if (last_clk_i2c && !clk_i2c) begin
+					// negedge
+					
+					// put sda down from our side
+					sda <= 0;
+					
+					// drive clock down
+					scl <= 0;
+					
+					state <= STATE_RECEIVE_ACK;
 				end
-			STATE_ACK_HIGH:
-				if (i2c_clock) begin
-					state <= STATE_ACK_LOW;
-				end
-			STATE_ACK_LOW:
-				if (i2c_clock) begin
-					if (byte_type == TYPE_ADDRESS) begin
-						byte_type <= TYPE_DATA;
-						counter <= 7;
-						index <= 0;
-						state <= STATE_PREPARE_BIT;
-					end
-					else if (index == BYTES - 1) begin
-						// all bytes processed
-						state <= STATE_STOP;
-					end
-					else begin
-						// next data byte
-						counter <= 7;
-						index <= index + 1;
-						state <= STATE_PREPARE_BIT;
-					end
-				end
-			STATE_STOP: begin
-				if (i2c_clock) begin
+			STATE_RECEIVE_ACK:
+				if (!last_clk_i2c && clk_i2c) begin
+					// posedge
+					
+					// indicate sent
+					sent <= 1;
+					
 					state <= STATE_IDLE;
 					
-					// bus STOP
-					sda <= 1;
+					// drive clock up
+					scl <= 1;
 				end
-			end
+				// TODO: continue or next byte
 		endcase
 	end
 	

@@ -71,3 +71,12 @@ set_io PIN_A6_o A6
 
 set_io PIN_B7_o B7
 set_io PIN_B8_o B8
+
+### 4th Bar - 1st Line
+set_io PIN_B1_o B1
+set_io PIN_C1_o C1
+
+### 4th Bar - 2nd Line
+set_io PIN_B2_o B2
+set_io PIN_C2_o C2
+

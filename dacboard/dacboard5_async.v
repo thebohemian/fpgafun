@@ -1,9 +1,17 @@
+`include "../common/iceclock/iceclock.v"
 `include "../common/uart_rx.v"
 `include "../common/fo_sigma_delta_dac.v"
 `include "../common/clocks/counter_clock_enable.v"
-`include "memory.v"
-`include "../common/fifo.v"
+`include "asynchronous_fifo.v"
 
+/**
+ * Module: top
+ * 
+ * PCM Player using asynchronous FIFO. The FIFO wastes a lot of
+ * BRAM, so there is very little left for the player. Player
+ * design is simpler but at the expense of no workable
+ * storage space.
+ */
 module top(
 		input CLK_IN,
 		
@@ -39,89 +47,82 @@ module top(
 	localparam MAIN_CLOCK_FREQ = 12_000_000;
 	
 	// UART frequency/speed
-	localparam BAUDRATE = 3_000_000;
-	
+	localparam BAUDRATE = 2_000_000;	// only workable with 2M
+	wire		sysclk = CLK_IN;
+
 	// FIFO frequency (frequency of the PCM samples) 
 	localparam FIFO_CLOCK_FREQ = 44_100;
 	
-	// DAC frequency (Sigma-Delta works best when oversampling many times)
-	localparam DAC_CLOCK_FREQ = 64*48_000;
+	// DAC frequency (Sigma-Delta works best when oversampling many times, IOW run as fast as possible)
+	//localparam DAC_SPEED = 276;	// still works but bad quality because of signals in the FPGA not reaching destinations in time
+	localparam DAC_SPEED = 180;		// best results and within timing limits
+	localparam DAC_CLOCK_FREQ = DAC_SPEED * 1_000_000;
+	wire       dac_clk;							
+	wire       locked;							
+	iceclock #(.speed(DAC_SPEED)) clock0 (.clock12mhz_in(CLK_IN), .clock_out(dac_clk), .locked(locked));
 	
 	// byte transfer states
-	localparam DAC_BITS = 8;
-	localparam FIFO_BITS = 16;
+	localparam DAC_BITS = 16;
+	localparam FIFO_BITS_IN = 8;
+	localparam FIFO_BITS_OUT = 32;
 
-	localparam RX_WAIT_DATA_0 = 0;
-	localparam RX_WAIT_DATA_1 = 1;
-	
 	wire		rx_received;
 	reg	[7:0]	rx_data;
 	reg [7:0]	rx_audio_buf = 0;
-	reg			rx_state = RX_WAIT_DATA_0;
-	reg			fifo_wr_en = 0;
-
+	
 	// data to write to fifo
-	localparam FIFO_SIZE = 8192;
+	localparam FIFO_SIZE = 4096;
+	localparam FIFO_ALMOST_EMPTY_SIZE = 4*(FIFO_SIZE / 10);	// 30% 
+	localparam FIFO_ALMOST_FULL_SIZE = FIFO_SIZE - 8*(FIFO_SIZE / 10);	// 50% 
 	localparam FIFO_MAX_BITS = $clog2(FIFO_SIZE);
+
 	wire fifo_empty;
 	wire fifo_full;
 	wire [(FIFO_MAX_BITS-1):0] fifo_fill;
-	reg [(FIFO_BITS-1):0] fifo_wr_data = 0;
+	reg [(FIFO_BITS_IN-1):0] fifo_wr_data = 0;
 	
 	wire fifo_almost_empty;
 	wire fifo_almost_full;
 	
-	assign fifo_almost_empty = (fifo_fill <= 3*(FIFO_SIZE / 10));
-	assign fifo_almost_full = (fifo_fill >= FIFO_SIZE - 5*(FIFO_SIZE / 10));
+	assign fifo_almost_empty = fifo_fill <= FIFO_ALMOST_EMPTY_SIZE;
+	assign fifo_almost_full = fifo_fill >= FIFO_ALMOST_FULL_SIZE;
+
+	// fifo read and write enable
+	wire		fifo_rd_en;
+	reg			fifo_wr_en = 0;
 	
 	// data from fifo going to dac
-	wire [(FIFO_BITS-1):0] fifo_out;
-	wire fifo_rd_en;
+	wire [(FIFO_BITS_OUT-1):0] fifo_out;
 	
-	wire dac_ce;
-	wire [(DAC_BITS-1):0] dac_l_in;
-	wire [(DAC_BITS-1):0] dac_r_in;
+	reg [(DAC_BITS-1):0] dac_l_in;
+	reg [(DAC_BITS-1):0] dac_r_in;
 	wire dac_reset;
-	
-	// play output
-	assign dac_l_in = fifo_out[15:8];
-	assign dac_r_in = fifo_out[7:0];
 	
 	// reset dac when fifo invalid
 	assign dac_reset = fifo_empty;
+
+	wire samplerate_en;
 			
-	always @(posedge CLK_IN) begin
+	always @(posedge sysclk) begin
 		fifo_wr_en <= 0;
 		
 		if (rx_received) begin
-			case (rx_state)
-				RX_WAIT_DATA_0: begin
-					rx_audio_buf <= rx_data;
-					
-					rx_state <= RX_WAIT_DATA_1;
-				end
-				RX_WAIT_DATA_1: begin
-					fifo_wr_data <= { rx_data, rx_audio_buf };
-					fifo_wr_en <= 1;
-					
-					rx_state <= RX_WAIT_DATA_0;
-				end
-			endcase
+			fifo_wr_data <= rx_data;
+			fifo_wr_en <= 1;
+		end
+	end
+
+	always @(posedge sysclk) begin
+		if (samplerate_en && fifo_fill > 3) begin
+			fifo_rd_en <= 1;
+		end else if (fifo_rd_en) begin
+			fifo_rd_en <= 0;
+			
+			dac_l_in <= fifo_out[31:16];
+			dac_r_in <= fifo_out[15:0];
 		end
 	end
 	
-	counter_clock_enable
-		#(
-			.CLK_FREQ(MAIN_CLOCK_FREQ),
-			.COUNTER_FREQ(DAC_CLOCK_FREQ),
-		)
-		dac_clock_enable
-		(
-			.en(dac_ce),
-			
-			.clk(CLK_IN)
-		);
-		
 	counter_clock_enable
 		#(
 			.CLK_FREQ(MAIN_CLOCK_FREQ),
@@ -129,9 +130,9 @@ module top(
 		)
 		fifo_clock_enable
 		(
-			.en(fifo_rd_en),
+			.en(samplerate_en),
 			
-			.clk(CLK_IN)
+			.clk(sysclk)
 		);
 
 	uart_rx
@@ -144,10 +145,14 @@ module top(
 			.rx_data(rx_data),
 			.received(rx_received),
 			
-			.clk(CLK_IN)
+			.clk(sysclk)
 		);
 		
-	fifo #(.BITS(FIFO_BITS), .SIZE(FIFO_SIZE))
+	asynchronous_fifo
+		#(
+			.BITS_IN(FIFO_BITS_IN),
+			.BITS_OUT(FIFO_BITS_OUT),
+			.SIZE(FIFO_SIZE))
 		fifo1(
 			.wr_en(fifo_wr_en),
 			.wr_data(fifo_wr_data),
@@ -160,7 +165,7 @@ module top(
 						
 			.fill(fifo_fill),
 				
-			.clk(CLK_IN)
+			.clk(sysclk)
 		);
 
 	// left channel dac
@@ -170,7 +175,7 @@ module top(
 			.in(dac_l_in),
 			.out(GPIO_AUDIO_L),
 			
-			.clk(dac_ce)
+			.clk(dac_clk)
 		);
 	
 	// right channel dac
@@ -180,10 +185,11 @@ module top(
 			.in(dac_r_in),
 			.out(GPIO_AUDIO_R),
 			
-			.clk(dac_ce)
+			.clk(dac_clk)
 		);
 	
-	assign leds = fifo_fill[(FIFO_MAX_BITS-1):(FIFO_MAX_BITS-9)];
+	//assign leds = fifo_fill[(FIFO_MAX_BITS-1):(FIFO_MAX_BITS-9)];
+	assign leds = fifo_fill;
 	
 	assign P16_o = fifo_empty;
 	assign P15_o = fifo_full;

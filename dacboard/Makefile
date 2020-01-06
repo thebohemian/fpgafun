@@ -14,7 +14,8 @@ NEXTPNR_FLAGS=--hx8k --package ct256 --force
 ARACHNE_FLAGS="-d 8k -P ct256"
 PCF=hx8k-ct256.pcf
 
-SIM_OBJECT = dacboard4_16bit
+SIM_OBJECT = dacboard5
+#SIM_OBJECT = asynchronous_fifo
 FPGA_OBJECT = $(SIM_OBJECT)
 TOP_OBJECT = top
 
@@ -23,6 +24,7 @@ TOP_OBJECT = top
 #BAUDRATE = 230400
 #BAUDRATE = 460800
 #BAUDRATE = 921600
+#BAUDRATE = 2000000
 BAUDRATE = 3000000
 
 # Tool Examples:

@@ -2,8 +2,7 @@
 `include "../common/uart_rx.v"
 `include "../common/fo_sigma_delta_dac.v"
 `include "../common/clocks/counter_clock_enable.v"
-`include "memory.v"
-`include "fifo.v"
+`include "../common/fifo.v"
 
 module top(
 		input CLK_IN,

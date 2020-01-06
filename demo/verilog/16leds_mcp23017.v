@@ -1,9 +1,7 @@
-`include "../../common/iceclock/iceclock.v"
-`include "../../common/clocks/monotonic_counter.v"
-`include "../../common/clocks/binary_divider_clock_enable.v"
 `include "../../common/clocks/counter_clock.v"
+`include "../../common/clocks/monotonic_counter.v"
 `include "../../common/uart_rx.v"
-`include "../../common/i2c_tx.v"
+`include "../../common/io_mcp23017.v"
 
 /**
  * Module: top
@@ -11,7 +9,6 @@
  * Controls 16 LEDs connected to a MCP 23017
  * IC. Which LEDs to light up depends on the byte
  * that is received via UART.
- * 
  * 
  */
 module top(
@@ -28,21 +25,18 @@ module top(
 		
 		input UART_RX_i,
 
-		output PIN_C16_o,
-		output PIN_D16_o
+		output PIN_B2_o,
+		output PIN_C2_o
 		
 		);
 	
-	// Using a PLL to set up the clock speed to something different
-	// than the 12 MHz of CLK_IN.
-	localparam SPEED = 18;
-	wire       sysclk;							
-	wire       locked;							
-	iceclock #(.speed(SPEED)) clock0 (.clock12mhz_in(CLK_IN), .clock_out(sysclk), .locked(locked));
+	localparam SPEED = 12;
+	wire sysclk = CLK_IN;
 	
 	// Main clock speed is important for some modules to know.
 	localparam MAIN_CLOCK_FREQ = SPEED * 1_000_000;
-	localparam I2C_CLOCK_FREQ = 100_000;
+//	localparam I2C_CLOCK_FREQ = 100_000;
+	localparam I2C_CLOCK_FREQ = 2;
 
 	// UART Baudrate
 	localparam UART_FREQ = 115_200;
@@ -54,35 +48,52 @@ module top(
 	//localparam UART_FREQ = 4_000_000;
 	
 	wire i2c_clock;
+	wire [2:0] counter;
+	reg setup = 0;
 	
 	// i2c pins
 	wire sda;
-	wire scl;
+	wire sck;
 	
 	// Assigment to FPGA pins
-	assign PIN_C16_o = sda;
-	assign PIN_D16_o = sck;
+	assign PIN_B2_o = sda;
+	assign PIN_C2_o = sck;
 	
-	// Read enable for shifting out
-	reg rd_en = 0;
+	// Write enable for shifting out
+	reg wr_en = 0;
 	reg [7:0] data;
+	reg [7:0] register_address;
 	
 	// Data from UART and signalisation
 	wire [7:0] rx_data;
 	wire received;
 	
-	reg index = 0;
-	
 	always @(posedge sysclk) begin
-		rd_en <= 0;
+		wr_en <= 0;
 		
-		// When data from UART arrives, forward it to the Shift Register
+		if (counter == 7
+				&& !setup) begin
+				data <= 0;
+				register_address <= 8'h00;
+				wr_en <= 1;
+		end
+		
+		// When data from UART arrives, forward it to the IO Extender
 		if (received) begin
 			data <= rx_data;
-			index <= index + 1;
-			rd_en <= 1;
+			register_address <= 8'h12;
+			wr_en <= 1;
 		end
 	end
+	
+	monotonic_counter
+		#(
+			.BITS(3)
+		)
+		cnt0(
+			.value(counter),
+			.clk(sysclk)
+		);
 	
 	counter_clock
 		#(
@@ -93,23 +104,20 @@ module top(
 		counter_clock0
 		(
 			.clk_out(i2c_clock),
-			
 			.clk(sysclk)
 		);
 		
-	i2c_tx
-		#(
-			.BYTES(2)
-		)
-		mcp(
-			.rd_en(rd_en),
+	io_mcp23017
+		io0(
+			.wr_en(wr_en),
+			.hardware_address(3'b000),
+			.register_address(register_address),
 			.data_in(data),
-			.index_in(index),
 			
-			.sda(sda),
-			.scl(scl),
+			.SDA(sda),
+			.SCK(sck),
 			
-			.i2c_clock(i2c_clock),
+			.clk_ic(i2c_clock),
 			.clk(sysclk)
 		);
 	

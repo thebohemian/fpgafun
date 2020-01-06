@@ -2,7 +2,7 @@
 `include "../common/sigma_delta_dac.v"
 `include "../common/fo_sigma_delta_dac.v"
 `include "memory.v"
-`include "fifo.v"
+`include "../common/fifo.v"
 
 module dacboard3_8bit_uart_rx(
 		input CLK_IN,

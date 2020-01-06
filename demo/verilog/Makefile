@@ -21,8 +21,9 @@ ARACHNE_FLAGS="-d 8k -P ct256"
 
 #SIM_OBJECT = rxuart2
 #SIM_OBJECT = uart_test
-#SIM_OBJECT = i2c_tx
-FPGA_OBJECT= sram
+#FPGA_OBJECT = io_mcp23017
+#FPGA_OBJECT = i2c_tx
+#FPGA_OBJECT= sram
 #FPGA_OBJECT = pincontrol
 #FPGA_OBJECT = 8leds_4094be
 #FPGA_OBJECT = 16leds_mcp23017
