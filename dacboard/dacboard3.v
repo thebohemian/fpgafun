@@ -27,10 +27,10 @@ module top(
 		output LED_D3,
 		output LED_D2,
 		
-		output wire P16_o,
-		output wire P15_o,
-		output wire N16_o,
-		output wire M15_o);
+		output wire PIN_P16_o,
+		output wire PIN_P15_o,
+		output wire PIN_N16_o,
+		output wire PIN_M15_o);
 	
 	// combines all leds under one name
 	wire [7:0] leds;
@@ -170,11 +170,11 @@ module top(
 	assign leds = fifo_fill[(FIFO_MAX_BITS-1):(FIFO_MAX_BITS-9)];
 	//assign leds = dac_in[15:8];
 	
-	assign P16_o = fifo_empty;
-	assign P15_o = fifo_full;
+	assign PIN_P16_o = fifo_empty;
+	assign PIN_P15_o = fifo_full;
 
-	assign N16_o = fifo_almost_empty;
-	assign M15_o = fifo_almost_full;
+	assign PIN_N16_o = fifo_almost_empty;
+	assign PIN_M15_o = fifo_almost_full;
 	
 	assign UART_CTS_o = ~fifo_almost_empty;
 	assign UART_DSR_o = ~fifo_almost_full;

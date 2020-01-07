@@ -24,8 +24,8 @@ set_io UART_RX_i B10
 set_io UART_TX_o B12
 
 # PC -> FPGA (in)
-set_io UART_DTR_i A16
-set_io UART_RTS_i B13
+set_io -pullup yes UART_DTR_i A16
+set_io -pullup yes UART_RTS_i B13
 
 # FPGA -> PC (out)
 set_io UART_CTS_o A15
@@ -56,6 +56,7 @@ set_io PIN_B16_o B16
 set_io PIN_D14_o D14
 set_io PIN_D15_o D15
 
+set_io -pullup yes PIN_E16_i E16
 set_io -pullup yes PIN_D16_i D16
 set_io -pullup yes PIN_C16_i C16
 set_io -pullup yes PIN_B16_i B16

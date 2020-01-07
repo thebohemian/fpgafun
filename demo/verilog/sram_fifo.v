@@ -20,6 +20,7 @@ module top(
 		output LED_D3,
 		output LED_D2,
 		
+		input UART_DTR_i,		// flag read operation
 		input UART_RX_i,
 		
 		output wire PIN_C16_o,	// SI
@@ -41,15 +42,15 @@ module top(
 	wire       sysclk;							
 	wire       locked;							
 	iceclock #(.speed(SPEED)) clock0 (.clock12mhz_in(CLK_IN), .clock_out(sysclk), .locked(locked));
-/*	wire sysclk = CLK_IN;
-*/	
+	/*	wire sysclk = CLK_IN;
+	 */	
 	// Main clock speed is important for some modules to know.
 	localparam MAIN_CLOCK_FREQ = SPEED * 1_000_000;
 	
 	localparam SRAM_FREQ = 30_000_000;
 	localparam SRAM_FREQ = 1_000_000;
 	// watch the data transfer is slow motion
-//	localparam SRAM_FREQ = 2;
+	//	localparam SRAM_FREQ = 2;
 	
 	// UART Baudrate
 	localparam UART_FREQ = 115_200;
@@ -61,10 +62,10 @@ module top(
 	wire SO = PIN_E16_i;
 	
 	// 2 - SIO2
-//	wire SIO2 = PIN_E16_o;
+	//	wire SIO2 = PIN_E16_o;
 	
 	// 3 - HOLDn/SIO3
-//	wire SIO3 = PIN_F16_o;
+	//	wire SIO3 = PIN_F16_o;
 	
 	// 4 - SCK
 	wire SCK = PIN_D16_o;
@@ -76,19 +77,23 @@ module top(
 	wire [7:0] rx_data;
 	wire uart_received;
 	
-	reg [23:0] address = 24'h00_00_00;
-	reg [7:0] data = 0;
+	// data to write to fifo
+	localparam FIFO_SIZE = 1024*1024;
+	localparam FIFO_MAX_BITS = $clog2(FIFO_SIZE);
 	
-	// Read/write enable for SRAM
-	reg sram_rd_en = 0;
-	reg sram_wr_en = 0;
+	wire fifo_empty;
+	wire fifo_full;
+	wire [(FIFO_MAX_BITS-1):0] fifo_fill;
 	
-	// clock enable for the sram (max 20Mhz)
-	wire sram_clk;
+	// fifo read and write enable
+	reg 		fifo_rd_en = 0;
+	wire [7:0] fifo_out;
 	
-	wire [7:0] sram_data;
-	wire sram_completed;
+	reg			fifo_wr_en = 0;
+	reg [7:0] fifo_wr_data = 0;
 	
+	wire fifo_completed;
+
 	localparam STATE_IDLE = 0;
 	localparam STATE_WAIT_WRITE_COMPLETED = 1;
 	localparam STATE_WAIT_READ_COMPLETED = 2;
@@ -97,31 +102,32 @@ module top(
 	reg [7:0] sram_data_read = 0;
 	
 	always @(posedge sysclk) begin
-		sram_rd_en <= 0;
-		sram_wr_en <= 0;
+		fifo_rd_en <= 0;
+		fifo_wr_en <= 0;
 		
 		case (state)
 			STATE_IDLE: begin
-				// When data from UART arrives, forward it to the SRAM
+				// When data from UART arrives, forward it to the FIFO
 				if (uart_received) begin
-					data <= rx_data;
-					sram_wr_en <= 1;
-					state <= STATE_WAIT_WRITE_COMPLETED;
+					if (UART_DTR_i) begin
+						fifo_rd_en <= 1;
+						state <= STATE_WAIT_READ_COMPLETED;
+					end else begin
+						fifo_wr_data <= rx_data;
+						fifo_wr_en <= 1;
+						state <= STATE_WAIT_WRITE_COMPLETED;
+					end
 				end
 			end
-			STATE_WAIT_WRITE_COMPLETED: begin
-				if (sram_completed) begin
-					data <= 0;
-					sram_rd_en <= 1;
-					state <= STATE_WAIT_READ_COMPLETED;
-				end
-			end
-			STATE_WAIT_READ_COMPLETED: begin
-				if (sram_completed) begin
-					sram_data_read <= sram_data;
+			STATE_WAIT_WRITE_COMPLETED:
+				if (fifo_completed) begin
 					state <= STATE_IDLE;
 				end
-			end
+			STATE_WAIT_READ_COMPLETED:
+				if (fifo_completed) begin
+					sram_data_read <= fifo_out;
+					state <= STATE_IDLE;
+				end
 		endcase
 	end
 
@@ -151,14 +157,47 @@ module top(
 			.clk(sysclk)
 		);
 	
+	wire sram_clk;
+	wire sram_wr_en, sram_rd_en;
+	wire [(FIFO_MAX_BITS-1):0] sram_address_in;
+	wire [7:0] sram_data_in, sram_data_out;
+	wire sram_completed;
+	
+	fifo_extmem
+		#(
+			.BITS(8),
+			.SIZE(FIFO_SIZE))
+		fifo1(
+			.wr_en(fifo_wr_en),
+			.wr_data(fifo_wr_data),
+			
+			.rd_en(fifo_rd_en),
+			.rd_data(fifo_out),
+			.completed(fifo_completed),
+			
+			.fifo_empty(fifo_empty),
+			.fifo_full(fifo_full),
+						
+			.fill(fifo_fill),
+
+			.mem_wr_en(sram_wr_en),
+			.mem_rd_en(sram_rd_en),
+			.mem_address(sram_address_in),
+			.mem_data_out(sram_data_in),
+			.mem_data_in(sram_data_out),
+			.mem_completed(sram_completed),
+
+			.clk(sysclk)
+		);
+
 	sram_23lc1024 sram0
 		(
 			.wr_en(sram_wr_en),
 			.rd_en(sram_rd_en),
 			
-			.address_in(address),
-			.data_in(data),
-			.data_out(sram_data),
+			.address_in(sram_address_in),
+			.data_in(sram_data_in),
+			.data_out(sram_data_out),
 			
 			.completed(sram_completed),
 			
@@ -172,7 +211,8 @@ module top(
 		);
 	
 	// The LEDs on the board itself reflect the byte received via UART
-	assign { LED_D9, LED_D8, LED_D7, LED_D6, LED_D5, LED_D4, LED_D3, LED_D2 } = sram_data_read;
-	//assign { LED_D9, LED_D8, LED_D7, LED_D6, LED_D5, LED_D4, LED_D3, LED_D2 } = cables;
+	//assign leds = sram_data_read;
+	//assign leds = cables;
+	assign leds = fifo_fill;
 	
 endmodule
