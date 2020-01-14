@@ -14,7 +14,7 @@ NEXTPNR_FLAGS=--hx8k --package ct256 --force
 ARACHNE_FLAGS="-d 8k -P ct256"
 PCF=hx8k-ct256.pcf
 
-SIM_OBJECT = dacboard5
+SIM_OBJECT = dacboard4_16bit
 #SIM_OBJECT = asynchronous_fifo
 FPGA_OBJECT = $(SIM_OBJECT)
 TOP_OBJECT = top
@@ -61,6 +61,9 @@ all: $(notdir $(CURDIR)).bin
 %.asc: %.nljson
 	$(NEXTPNR) $(NEXTPNR_FLAGS) --asc $@ --pcf $(PCF) --pcf-allow-unconstrained --write $*.place.nljson --json $<
 
+guisyn: $(FPGA_OBJECT).asc
+	$(NEXTPNR) $(NEXTPNR_FLAGS) --json $(FPGA_OBJECT).place.nljson --pcf $(PCF) --pcf-allow-unconstrained --gui
+	
 %.nljson: %.v
 	$(YOSYS) -f verilog -p 'synth_ice40 -top $(TOP_OBJECT)' -b json -o $@ $<
 
