@@ -1,4 +1,5 @@
-`include "../../common/iceclock/iceclock.v"
+// loads board specific definitions
+`include `"boards/`BOARD.v`"
 
 module top(
 		output LED_D9,
@@ -14,8 +15,10 @@ module top(
 		);
 	
 	wire       sysclk;							
-	wire       locked;							
-	iceclock #(.speed(30)) clock0 (.clock12mhz_in(CLK_IN), .clock_out(sysclk), .locked(locked));
+	wire       locked;
+	
+	// depending on board uses iceclock or ecpclock internally
+	boardclock #(.speed(30)) clock0 (.clock_in(CLK_IN), .clock_out(sysclk), .locked(locked));
 	
 	localparam SYS_CLK_FREQ = 30_000_000;
 	localparam BLINK_FREQ = 1;

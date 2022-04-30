@@ -39,7 +39,8 @@ TOP_OBJECT = top
 #SIM_OBJECT = uart_test
 
 #FPGA_OBJECT = blink
-FPGA_OBJECT = blink2
+#FPGA_OBJECT = blink2
+FPGA_OBJECT = blink_30
 #FPGA_OBJECT = io_mcp23017
 #FPGA_OBJECT = i2c_tx
 #FPGA_OBJECT= simple-logic
