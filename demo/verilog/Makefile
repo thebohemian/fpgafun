@@ -4,7 +4,7 @@ TOOLS_PREFIX=$(HOME)/devel/hdl-learning/install-root/bin
 
 ifeq ($(DEVICE),hx8k)
 	BOARD=hx8k
-	PCF=hx8k-bo-board.pcf
+	PCF=constraints/hx8k-bo-board.pcf
 	YOSYS_FLAGS=-DBOARD=$(BOARD) -f verilog -p 'synth_ice40 -top $(TOP_OBJECT)'
 	NEXTPNR_FLAGS=--hx8k --package ct256 --pcf $(PCF) --pcf-allow-unconstrained
 	NEXTPNR_SUFFIX=ice40
@@ -16,7 +16,7 @@ ifeq ($(DEVICE),hx8k)
 else
 	BOARD=ulx3s
 	# so far names used in verilog follow the hx8k bo board, so aliases have been added
-	LPF=ulx3s_v20.lpf
+	LPF=constraints/ulx3s_v20.lpf
 	YOSYS_FLAGS=-DBOARD=$(BOARD) -f verilog -p 'synth_ecp5 -top $(TOP_OBJECT)'
 	NEXTPNR_FLAGS=--lpf $(LPF) --85k --package CABGA381
 	NEXTPNR_SUFFIX=ecp5
@@ -91,6 +91,8 @@ endif
 %.nljson: %.v
 	$(YOSYS) $(YOSYS_FLAGS) -b json -o $@ $<
 
+all: $(BITSTREAM)
+
 upload: $(BITSTREAM)
 	$(PROG) $(PROG_FLAGS) $<
 
@@ -107,4 +109,4 @@ clean:
 	rm -f *.bin *.txt *.blif *.rpt *.vvp *.vcd *.nljson *.asc *.bit *.config
 
 .PRECIOUS: %.bin %.asc %.nljson 
-.PHONY: all explain install clean simclean sim tty
+.PHONY: all upload sim tsim tty clean
