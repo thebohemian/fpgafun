@@ -10,8 +10,9 @@ module top(
 		output LED_D4,
 		output LED_D3,
 		output LED_D2);
-	
-	localparam MAIN_CLOCK_FREQ = 12_000_000;
+
+	// loads board specific definitions
+	`include `"boards/`BOARD.v`"
 	
 	localparam SWITCH_LIGHT_FREQ = 4;
 	localparam SWITCH_LIGHT_COUNT = MAIN_CLOCK_FREQ/SWITCH_LIGHT_FREQ;
