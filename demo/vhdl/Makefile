@@ -9,18 +9,18 @@ SIM_FLAGS=--stop-time=500ms
 #ICEPACK=icepack
 #NEXTPNR=nextpnr-ice40
 
-TOOLS_PREFIX=$(HOME)/devel/hdl-learning/bin
-IVERILOG=$(TOOLS_PREFIX)/bin/iverilog
-VVP=$(TOOLS_PREFIX)/bin/vvp
+TOOLS_PREFIX=$(HOME)/devel/hdl-learning/install-root/bin
+IVERILOG=$(TOOLS_PREFIX)/iverilog
+VVP=$(TOOLS_PREFIX)/vvp
 
-GHDL=$(TOOLS_PREFIX)/bin/ghdl
+GHDL=$(TOOLS_PREFIX)/ghdl
 GHDL_FLAGS=--std=08
 
-YOSYS=$(TOOLS_PREFIX)/bin/yosys
+YOSYS=$(TOOLS_PREFIX)/yosys
 YOSYS_VHDL_FLAGS=-m ghdl -p 'ghdl $(VHDL_SOURCES) -e $(OBJECT); synth_ice40' -b json
-ICEPACK=$(TOOLS_PREFIX)/bin/icepack
+ICEPACK=$(TOOLS_PREFIX)/icepack
 
-NEXTPNR=$(TOOLS_PREFIX)/bin/nextpnr-ice40
+NEXTPNR=$(TOOLS_PREFIX)/nextpnr-ice40
 NEXTPNR_FLAGS=--hx8k --package ct256
 
 all: $(notdir $(CURDIR)).bin
