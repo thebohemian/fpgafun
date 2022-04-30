@@ -40,7 +40,8 @@ TOP_OBJECT = top
 
 #FPGA_OBJECT = blink
 #FPGA_OBJECT = blink2
-FPGA_OBJECT = blink_30
+#FPGA_OBJECT = blink_30
+FPGA_OBJECT = ext_counter_reg
 #FPGA_OBJECT = io_mcp23017
 #FPGA_OBJECT = i2c_tx
 #FPGA_OBJECT= simple-logic

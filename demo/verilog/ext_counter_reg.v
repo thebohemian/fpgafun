@@ -22,7 +22,7 @@ module top (
 		output LED_D3,
 		output LED_D2,
 		
-		input D16_i,
+		input PIN_D16_i,
 		
 		input CLK_IN
 		);
@@ -34,7 +34,7 @@ module top (
 	reg [15:0] led_counter = 0;
 
 	always @ (posedge CLK_IN) begin
-		input_latch_unstable <= D16_i;	// metastable
+		input_latch_unstable <= PIN_D16_i;	// metastable
 		input_latch_next <= input_latch_unstable;	// stable
 		input_latch_last <= input_latch_next;		// last value
 		
